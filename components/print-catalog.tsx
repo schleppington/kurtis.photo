@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import Link from "next/link";
+import { TransitionLink as Link } from "@/components/navigation-transition";
 import { type CSSProperties, useCallback, useState } from "react";
 import { PrintConfigurator } from "@/components/cart";
 import { PhotoLightbox } from "@/components/photo-lightbox";

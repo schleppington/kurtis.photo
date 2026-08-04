@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TransitionLink as Link } from "@/components/navigation-transition";
 import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 

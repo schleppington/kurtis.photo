@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TransitionLink as Link } from "@/components/navigation-transition";
 import { CheckoutReturnHandler } from "@/components/cart";
 import { PrintCatalog, type PrintCatalogGroup } from "@/components/print-catalog";
 import { SiteFooter } from "@/components/site-footer";

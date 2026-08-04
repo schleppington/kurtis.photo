@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import type { Feature, FeatureCollection, Geometry, MultiLineString, Point } from "geojson";
-import Link from "next/link";
+import { TransitionLink as Link } from "@/components/navigation-transition";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";

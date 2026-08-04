@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Script from "next/script";
 import { CartProvider } from "@/components/cart";
 import { siteConfig } from "@/content/site-config";
+import { NavigationTransitionProvider } from "@/components/navigation-transition";
 import { siteCopy } from "@/content/site-copy";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./theme.css";
@@ -38,7 +39,9 @@ export default function RootLayout({
   return (
     <html lang={siteConfig.language}>
       <body>
-        <CartProvider>{children}</CartProvider>
+        <NavigationTransitionProvider>
+          <CartProvider>{children}</CartProvider>
+        </NavigationTransitionProvider>
         {process.env.CF_ANALYTICS_TOKEN ? (
           <Script
             data-cf-beacon={JSON.stringify({ token: process.env.CF_ANALYTICS_TOKEN })}
