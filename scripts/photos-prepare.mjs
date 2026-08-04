@@ -2,7 +2,7 @@
 
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -40,6 +40,26 @@ const printSelectionsPath = path.join(root, "content", "prints.json");
 const manifestPath = path.join(manifestDirectory, `${collectionSlug}.json`);
 const imageSizes = [768, 1600, 2400];
 const jpegtran = "/opt/homebrew/bin/jpegtran";
+let sharpModule;
+
+async function getSharp() {
+  sharpModule ??= (await import("sharp")).default;
+  return sharpModule;
+}
+
+async function macToolsAvailable() {
+  if (process.platform !== "darwin") return false;
+  try {
+    await execFileAsync("sips", ["-h"]);
+    await access(jpegtran);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const useSharp = !(await macToolsAvailable());
+
 
 function parseSipsMetadata(stdout) {
   const valueFor = (property) => {
@@ -57,6 +77,65 @@ function parseSipsMetadata(stdout) {
   };
 }
 
+function parseExifValue(exif, tiffOffset, littleEndian, entryOffset, type, count) {
+  const typeSize = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1 }[type];
+  if (!typeSize) return null;
+  const byteLength = typeSize * count;
+  const readU16 = (offset) => littleEndian ? exif.readUInt16LE(offset) : exif.readUInt16BE(offset);
+  const readU32 = (offset) => littleEndian ? exif.readUInt32LE(offset) : exif.readUInt32BE(offset);
+  const valueOffset = byteLength <= 4 ? entryOffset + 8 : tiffOffset + readU32(entryOffset + 8);
+  if (valueOffset < 0 || valueOffset + byteLength > exif.length) return null;
+
+  if (type === 2) {
+    return exif.toString("utf8", valueOffset, valueOffset + byteLength).replace(/\0+$/, "").trim() || null;
+  }
+  if (type === 3) return readU16(valueOffset);
+  if (type === 4) return readU32(valueOffset);
+  return null;
+}
+
+function parseExifDirectory(exif, tiffOffset, littleEndian, relativeOffset) {
+  const readU16 = (offset) => littleEndian ? exif.readUInt16LE(offset) : exif.readUInt16BE(offset);
+  const readU32 = (offset) => littleEndian ? exif.readUInt32LE(offset) : exif.readUInt32BE(offset);
+  const directoryOffset = tiffOffset + relativeOffset;
+  if (directoryOffset < 0 || directoryOffset + 2 > exif.length) return new Map();
+
+  const entryCount = readU16(directoryOffset);
+  const values = new Map();
+  for (let index = 0; index < entryCount; index += 1) {
+    const entryOffset = directoryOffset + 2 + index * 12;
+    if (entryOffset + 12 > exif.length) break;
+    const tag = readU16(entryOffset);
+    const type = readU16(entryOffset + 2);
+    const count = readU32(entryOffset + 4);
+    const value = parseExifValue(exif, tiffOffset, littleEndian, entryOffset, type, count);
+    if (value !== null) values.set(tag, value);
+  }
+  return values;
+}
+
+function parseExifMetadata(exif) {
+  if (!exif) return {};
+  const littleMarker = exif.indexOf(Buffer.from([0x49, 0x49, 0x2a, 0x00]));
+  const bigMarker = exif.indexOf(Buffer.from([0x4d, 0x4d, 0x00, 0x2a]));
+  const tiffOffset = littleMarker >= 0 ? littleMarker : bigMarker;
+  if (tiffOffset < 0) return {};
+
+  const littleEndian = littleMarker >= 0;
+  const readU32 = (offset) => littleEndian ? exif.readUInt32LE(offset) : exif.readUInt32BE(offset);
+  const ifd0 = parseExifDirectory(exif, tiffOffset, littleEndian, readU32(tiffOffset + 4));
+  const exifIfdOffset = ifd0.get(0x8769);
+  const exifIfd = typeof exifIfdOffset === "number"
+    ? parseExifDirectory(exif, tiffOffset, littleEndian, exifIfdOffset)
+    : new Map();
+
+  return {
+    cameraMake: ifd0.get(0x010f) ?? null,
+    cameraBody: ifd0.get(0x0110) ?? null,
+    captureDate: exifIfd.get(0x9003) ?? exifIfd.get(0x9004) ?? ifd0.get(0x0132) ?? null,
+  };
+}
+
 function publicId(filename) {
   return path.basename(filename, path.extname(filename)).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -66,6 +145,19 @@ async function run(command, args) {
 }
 
 async function inspect(sourcePath) {
+  if (useSharp) {
+    const sharp = await getSharp();
+    const metadata = await sharp(sourcePath).metadata();
+    const exif = parseExifMetadata(metadata.exif);
+    return {
+      width: Number(metadata.width),
+      height: Number(metadata.height),
+      cameraMake: exif.cameraMake,
+      cameraBody: exif.cameraBody,
+      captureDate: exif.captureDate,
+    };
+  }
+
   const { stdout } = await execFileAsync("sips", [
     "-g", "pixelWidth",
     "-g", "pixelHeight",
@@ -77,6 +169,7 @@ async function inspect(sourcePath) {
   return parseSipsMetadata(stdout);
 }
 
+
 async function contentHash(sourcePath) {
   const contents = await readFile(sourcePath);
   return createHash("sha256").update(contents).digest("hex").slice(0, 12);
@@ -86,6 +179,20 @@ async function createVariant(sourcePath, assetKey, longestEdge) {
   const temporaryPath = path.join(workDirectory, `${assetKey}-${longestEdge}.jpg`);
   const outputPath = path.join(publicDirectory, `${assetKey}-${longestEdge}.jpg`);
 
+  if (useSharp) {
+    const sharp = await getSharp();
+    await sharp(sourcePath)
+      .rotate()
+      .resize({
+        width: longestEdge,
+        height: longestEdge,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 82 })
+      .toFile(outputPath);
+    return "/media/" + publicCollectionSlug + "/" + assetKey + "-" + longestEdge + ".jpg";
+  }
   await run("sips", [
     "-Z", String(longestEdge),
     "-s", "format", "jpeg",
@@ -202,7 +309,7 @@ for (const [index, filename] of files.entries()) {
       aperture: previous?.metadata?.aperture ?? null,
       shutterSpeed: previous?.metadata?.shutterSpeed ?? null,
       iso: previous?.metadata?.iso ?? null,
-      captureDate: metadata.captureDate ?? previous?.metadata?.captureDate ?? null,
+      captureDate: previous?.metadata?.captureDate ?? metadata.captureDate ?? null,
     },
   });
 }
