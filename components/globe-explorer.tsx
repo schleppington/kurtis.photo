@@ -8,8 +8,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import type { GeoJSONSource, Map as MapLibreMap, Marker as MapLibreMarker, StyleSpecification } from "maplibre-gl";
-import worldCountries from "world-atlas/countries-10m.json";
-import worldAtlas from "world-atlas/land-10m.json";
 import { globeConfig } from "@/content/globe-config";
 import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
@@ -33,22 +31,39 @@ export type GlobePlace = {
 
 type LandTopology = Topology<{ land: GeometryCollection }>;
 type CountriesTopology = Topology<{ countries: GeometryCollection; land: GeometryCollection }>;
+type GlobeResolution = "50m" | "10m";
+type GlobeGeometry = { land: FeatureCollection<Geometry>; countryBorders: MultiLineString };
 type PlaceProperties = { slug: string; title: string };
 type ClusterMarker = { marker: MapLibreMarker; element: HTMLSpanElement };
 
-const topology = worldAtlas as unknown as LandTopology;
-const countriesTopology = worldCountries as unknown as CountriesTopology;
-const land = rewindLandPolygons(
-  densifyLandPolygons(
-    splitAntimeridianPolygons(feature(topology, topology.objects.land) as FeatureCollection<Geometry>),
-  ),
-) as FeatureCollection<Geometry>;
-const countryBorders: MultiLineString = mesh(
-  countriesTopology,
-  countriesTopology.objects.countries,
-  (left, right) => left !== right,
-) as MultiLineString;
 const emptyPoints: FeatureCollection<Point, PlaceProperties> = { type: "FeatureCollection", features: [] };
+
+async function loadGlobeGeometry(resolution: GlobeResolution, signal?: AbortSignal): Promise<GlobeGeometry> {
+  const [landResponse, countriesResponse] = await Promise.all([
+    fetch(`/globe/land-${resolution}.json`, { cache: "force-cache", signal }),
+    fetch(`/globe/countries-${resolution}.json`, { cache: "force-cache", signal }),
+  ]);
+  if (!landResponse.ok || !countriesResponse.ok) {
+    throw new Error("The globe geometry could not be loaded.");
+  }
+
+  const [landTopology, countriesTopology] = await Promise.all([
+    landResponse.json() as Promise<LandTopology>,
+    countriesResponse.json() as Promise<CountriesTopology>,
+  ]);
+  const land = rewindLandPolygons(
+    densifyLandPolygons(
+      splitAntimeridianPolygons(feature(landTopology, landTopology.objects.land) as FeatureCollection<Geometry>),
+    ),
+  ) as FeatureCollection<Geometry>;
+  const countryBorders = mesh(
+    countriesTopology,
+    countriesTopology.objects.countries,
+    (left, right) => left !== right,
+  ) as MultiLineString;
+
+  return { land, countryBorders };
+}
 
 const borderOpacity = ["interpolate", ["linear"], ["zoom"], ...globeConfig.style.countryBorderOpacity];
 
@@ -94,7 +109,12 @@ function isOnVisibleHemisphere(center: { lat: number; lng: number }, coordinates
   return cosineDistance > globeConfig.visibleHemisphereThreshold;
 }
 
-function makeGlobeStyle(places: GlobePlace[], palette: ReturnType<typeof globePalette>, date = new Date()): StyleSpecification {
+function makeGlobeStyle(
+  places: GlobePlace[],
+  palette: ReturnType<typeof globePalette>,
+  geometry: GlobeGeometry,
+  date = new Date(),
+): StyleSpecification {
   const lightPosition = solarLightPosition(date, globeConfig.style.lightRadius) as [number, number, number];
   const placePoints: FeatureCollection<Point, PlaceProperties> = {
     type: "FeatureCollection",
@@ -105,8 +125,8 @@ function makeGlobeStyle(places: GlobePlace[], palette: ReturnType<typeof globePa
     version: 8,
     projection: { type: "globe" },
     sources: {
-      land: { type: "geojson", data: land },
-      "country-borders": { type: "geojson", data: countryBorders },
+      land: { type: "geojson", data: geometry.land },
+      "country-borders": { type: "geojson", data: geometry.countryBorders },
       places: {
         type: "geojson",
         data: placePoints,
@@ -321,18 +341,22 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     let instance: MapLibreMap | null = null;
     let lightingTimer: ReturnType<typeof setInterval> | null = null;
     const clusterMarkers = clusterMarkersRef.current;
+    const geometryAbortController = new AbortController();
 
     async function initializeMap() {
       const container = mapContainerRef.current;
       if (!container) return;
 
       try {
-        const { Map: MapConstructor, Marker } = await import("maplibre-gl");
+        const [{ Map: MapConstructor, Marker }, geometry] = await Promise.all([
+          import("maplibre-gl"),
+          loadGlobeGeometry("50m", geometryAbortController.signal),
+        ]);
         if (cancelled) return;
         const palette = globePalette();
         instance = new MapConstructor({
           container,
-          style: makeGlobeStyle(places, palette, new Date()),
+          style: makeGlobeStyle(places, palette, geometry, new Date()),
           center: globeConfig.worldView.center,
           zoom: globeConfig.worldView.zoom,
           minZoom: globeConfig.zoom.min,
@@ -385,6 +409,16 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
         instance.on("load", () => {
           if (cancelled || !instance) return;
           setMapReady(true);
+
+          void loadGlobeGeometry("10m", geometryAbortController.signal).then((highResolutionGeometry) => {
+            if (cancelled || !instance) return;
+            const landSource = instance.getSource("land") as GeoJSONSource | undefined;
+            const countryBorderSource = instance.getSource("country-borders") as GeoJSONSource | undefined;
+            landSource?.setData(highResolutionGeometry.land);
+            countryBorderSource?.setData(highResolutionGeometry.countryBorders);
+          }).catch((error) => {
+            if (!cancelled) console.warn("The high-resolution globe geometry could not be loaded.", error);
+          });
 
           const updateLighting = () => {
             if (!instance) return;
@@ -451,6 +485,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
           if (event.error) console.error(siteCopy.globe.mapError, event.error);
         });
       } catch (error) {
+        if (cancelled) return;
         console.error(siteCopy.globe.startError, error);
         if (!cancelled) setMapFailed(true);
       }
@@ -459,6 +494,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     void initializeMap();
     return () => {
       cancelled = true;
+      geometryAbortController.abort();
       if (lightingTimer) clearInterval(lightingTimer);
       for (const { marker } of clusterMarkers.values()) marker.remove();
       clusterMarkers.clear();
