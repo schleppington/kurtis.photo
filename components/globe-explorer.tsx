@@ -321,8 +321,6 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     let instance: MapLibreMap | null = null;
     let lightingTimer: ReturnType<typeof setInterval> | null = null;
     const clusterMarkers = clusterMarkersRef.current;
-    setMapReady(false);
-    setMapFailed(false);
 
     async function initializeMap() {
       const container = mapContainerRef.current;

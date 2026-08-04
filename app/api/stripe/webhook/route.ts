@@ -17,6 +17,12 @@ type StripeEvent = {
   data?: { object?: { id?: string } };
 };
 
+type FulfillmentEventType = (typeof commerceConfig.stripeFulfillmentEventTypes)[number];
+
+function isFulfillmentEventType(type: string): type is FulfillmentEventType {
+  return commerceConfig.stripeFulfillmentEventTypes.includes(type as FulfillmentEventType);
+}
+
 async function sendOrderEmail(apiKey: string, idempotencyKey: string, message: Record<string, unknown>) {
   return fetch(inquiryConfig.resendApiUrl, {
     method: "POST",
@@ -54,7 +60,7 @@ export async function POST(request: Request) {
     return Response.json({ error: orderApiCopy.invalidEvent }, { status: 400 });
   }
 
-  if (!event.type || !commerceConfig.stripeFulfillmentEventTypes.includes(event.type)) {
+  if (!event.type || !isFulfillmentEventType(event.type)) {
     return Response.json({ received: true });
   }
 

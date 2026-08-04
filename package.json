@@ -12,7 +12,10 @@
     "photos:prepare": "node scripts/photos-prepare.mjs",
     "portraits:prepare": "node scripts/photos-prepare.mjs --portraits",
     "photos:upload": "node scripts/photos-upload.mjs",
-    "test": "npm run build && node --test tests/*.test.mjs",
+    "test": "npm run build && npm run test:unit",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "test:browser:install": "playwright install chromium",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
@@ -24,7 +27,9 @@
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@cloudflare/vite-plugin": "1.37.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/geojson": "^7946.0.16",
     "@types/node": "22.19.19",

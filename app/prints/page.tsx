@@ -16,8 +16,9 @@ export default async function PrintsPage({
   searchParams: Promise<{ session_id?: string | string[] }>;
 }) {
   const query = await searchParams;
-  const sessionId = typeof query[commerceConfig.checkoutSessionQueryKey] === "string"
-    ? query[commerceConfig.checkoutSessionQueryKey]
+  const rawSessionId = query[commerceConfig.checkoutSessionQueryKey];
+  const sessionId = typeof rawSessionId === "string"
+    ? rawSessionId
     : null;
   const orderReceived = sessionId ? await isVerifiedPaidCheckout(sessionId) : false;
   const prints = getAvailablePrints();
