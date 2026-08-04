@@ -1,7 +1,7 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
 
+import { ResponsiveImage } from "@/components/responsive-image";
 import type { Feature, FeatureCollection, Geometry, MultiLineString, Point } from "geojson";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +23,7 @@ export type GlobePlace = {
   coordinates: { latitude: number; longitude: number };
   cover: {
     src: string;
+    srcSet: string;
     alt: string;
     width: number;
     height: number;
@@ -408,6 +409,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
 
         instance.on("load", () => {
           if (cancelled || !instance) return;
+          performance.mark("globe-ready");
           setMapReady(true);
 
           void loadGlobeGeometry("10m", geometryAbortController.signal).then((highResolutionGeometry) => {
@@ -416,6 +418,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
             const countryBorderSource = instance.getSource("country-borders") as GeoJSONSource | undefined;
             landSource?.setData(highResolutionGeometry.land);
             countryBorderSource?.setData(highResolutionGeometry.countryBorders);
+            performance.mark("globe-high-resolution-ready");
           }).catch((error) => {
             if (!cancelled) console.warn("The high-resolution globe geometry could not be loaded.", error);
           });
@@ -598,7 +601,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
         {selectedPlace ? (
           <article aria-live="polite" className="globe-photo-card">
             <Link className="globe-photo-card-link" href={routes.place(selectedPlace.slug)} aria-label={siteCopy.globe.openCollectionLabel(selectedPlace.title)}>
-              <img src={selectedPlace.cover.src} alt={selectedPlace.cover.alt} />
+              <ResponsiveImage alt={selectedPlace.cover.alt} height={selectedPlace.cover.height} sizes="(max-width: 780px) 110px, 180px" src={selectedPlace.cover.src} srcSet={selectedPlace.cover.srcSet} width={selectedPlace.cover.width} />
               <div>
                 <p className="eyebrow">{siteCopy.globe.selectedPlace}</p>
                 <h2>{selectedPlace.title}</h2>

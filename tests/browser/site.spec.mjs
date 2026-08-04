@@ -69,6 +69,15 @@ test.describe("site navigation and photo viewing", () => {
   });
 });
 
+test("photo tiles reserve their geometry and expose responsive sources", async ({ page }) => {
+  await openCollection(page);
+  const image = page.locator(".photo-tile img").first();
+  await expect(image).toHaveAttribute("width", /\d+/);
+  await expect(image).toHaveAttribute("height", /\d+/);
+  await expect(image).toHaveAttribute("srcset", /768/);
+  await expect(image).toHaveAttribute("sizes", /vw/);
+});
+
 test.describe("accessibility", () => {
   for (const path of ["/", "/places", collectionPath, "/portraits", "/prints"]) {
     test(`has no serious axe violations on ${path}`, async ({ page }) => {
@@ -95,13 +104,21 @@ test("records a lightweight performance baseline for the home page", async ({ pa
   const metrics = await page.evaluate(() => {
     const navigation = performance.getEntriesByType("navigation")[0];
     const paintEntries = performance.getEntriesByType("paint");
+    const largestContentfulPaint = performance.getEntriesByType("largest-contentful-paint").at(-1);
+    const interactionEntries = performance.getEntriesByType("event");
     const resources = performance.getEntriesByType("resource");
     const layoutShifts = performance.getEntriesByType("layout-shift");
+    const globeReady = performance.getEntriesByName("globe-ready")[0];
+    const globeHighResolutionReady = performance.getEntriesByName("globe-high-resolution-ready")[0];
 
     return {
       domContentLoadedMs: navigation?.domContentLoadedEventEnd ?? 0,
       loadMs: navigation?.loadEventEnd ?? 0,
       firstContentfulPaintMs: paintEntries.find((entry) => entry.name === "first-contentful-paint")?.startTime ?? 0,
+      largestContentfulPaintMs: largestContentfulPaint?.startTime ?? 0,
+      interactionDelayMs: interactionEntries.reduce((max, entry) => Math.max(max, entry.duration || 0), 0),
+      globeReadyMs: globeReady?.startTime ?? 0,
+      globeHighResolutionReadyMs: globeHighResolutionReady?.startTime ?? 0,
       imageBytes: resources
         .filter((entry) => entry.initiatorType === "img")
         .reduce((total, entry) => total + (entry.transferSize || 0), 0),
@@ -122,4 +139,5 @@ test("records a lightweight performance baseline for the home page", async ({ pa
   expect(metrics.domContentLoadedMs).toBeGreaterThan(0);
   expect(metrics.firstContentfulPaintMs).toBeGreaterThan(0);
   expect(metrics.loadMs).toBeLessThan(15_000);
+  expect(metrics.cumulativeLayoutShift).toBeLessThan(0.1);
 });

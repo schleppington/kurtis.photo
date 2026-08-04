@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { ResponsivePhoto } from "@/components/responsive-image";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { commerceConfig, routes, siteConfig } from "@/content/site-config";
+import { commerceConfig, routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import {
   formatPrintName,
@@ -211,7 +211,7 @@ function CartPanel() {
           <ul className="cart-lines">
             {resolvedLines.map(({ line, collection, photo, option }) => (
               <li key={line.id}>
-                <img src={photo.variants[siteConfig.imageVariants.thumbnail]} alt="" />
+                <ResponsivePhoto alt="" photo={photo} sizes="86px" variant="768" />
                 <div>
                   <strong>{formatPrintName(collection, photo)}</strong>
                   <span>{option.label} · {formatPrice(option.price)}</span>

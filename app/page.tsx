@@ -1,3 +1,4 @@
+import { buildPhotoSrcSet } from "@/components/responsive-image";
 import { GlobeExplorer, type GlobePlace } from "@/components/globe-explorer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/content/site-config";
@@ -15,6 +16,7 @@ export default function Home() {
       coordinates: collection.coordinates,
       cover: {
         src: cover.variants[siteConfig.imageVariants.thumbnail],
+        srcSet: buildPhotoSrcSet(cover),
         alt: cover.alt,
         width: cover.width,
         height: cover.height,

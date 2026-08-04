@@ -5,7 +5,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
-import { getCollection, getCover } from "@/lib/catalog";
+import { collections, getCollection, getCover } from "@/lib/catalog";
+
+export const dynamicParams = false;
+export const dynamic = "force-static";
+
+export function generateStaticParams() {
+  return collections.map((collection) => ({ slug: collection.slug }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

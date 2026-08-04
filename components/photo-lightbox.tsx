@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { ResponsiveImage } from "@/components/responsive-image";
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
 import { siteCopy } from "@/content/site-copy";
 
@@ -11,6 +11,7 @@ export function PhotoLightbox({
   description,
   detailsAside,
   eyebrow,
+  height,
   metadata,
   onClose,
   onNext,
@@ -18,6 +19,7 @@ export function PhotoLightbox({
   src,
   title,
   transitionDirection,
+  width,
 }: {
   alt: string;
   children?: ReactNode;
@@ -25,6 +27,7 @@ export function PhotoLightbox({
   description?: ReactNode;
   detailsAside?: ReactNode;
   eyebrow?: string;
+  height: number;
   metadata?: ReactNode;
   onClose: () => void;
   onNext?: () => void;
@@ -32,6 +35,7 @@ export function PhotoLightbox({
   src: string;
   title: string;
   transitionDirection?: "next" | "previous" | null;
+  width: number;
 }) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -40,12 +44,16 @@ export function PhotoLightbox({
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = "hidden";
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
     closeRef.current?.focus({ preventScroll: true });
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
       previouslyFocused?.focus({ preventScroll: true });
     };
   }, []);
@@ -81,7 +89,7 @@ export function PhotoLightbox({
         <button className="text-button" onClick={beginClose} ref={closeRef} type="button">{siteCopy.gallery.close}</button>
       </div>
       <div className="viewer-main">
-        <img alt={alt} className={`viewer-photo${directionClass}`} key={src} src={src} />
+        <ResponsiveImage alt={alt} className={`viewer-photo${directionClass}`} fetchPriority="high" height={height} key={src} loading="eager" src={src} width={width} />
       </div>
       {children}
       <div className={`viewer-details${detailsAside ? " has-aside" : ""}`}>

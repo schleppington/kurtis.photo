@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import Script from "next/script";
 import { CartProvider } from "@/components/cart";
 import { siteConfig } from "@/content/site-config";
@@ -9,27 +8,19 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./theme.css";
 import "./globals.css";
 
-export const dynamic = "force-dynamic";
-
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? siteConfig.brandName;
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
-  const origin = `${protocol}://${host}`;
-  return {
-    metadataBase: new URL(origin),
-    title: { default: siteConfig.brandName, template: `%s — ${siteConfig.brandName}` },
-    description: siteCopy.metadata.description,
-    icons: { icon: [...siteConfig.icons] },
-    openGraph: {
-      title: siteConfig.brandName,
-      description: siteCopy.metadata.socialDescription,
-      type: "website",
-      images: [{ ...siteConfig.socialImage, alt: siteCopy.metadata.socialImageAlt }],
-    },
-    twitter: { card: "summary_large_image", images: [siteConfig.socialImage.url] },
-  };
-}
+export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.canonicalOrigin),
+  title: { default: siteConfig.brandName, template: `%s — ${siteConfig.brandName}` },
+  description: siteCopy.metadata.description,
+  icons: { icon: [...siteConfig.icons] },
+  openGraph: {
+    title: siteConfig.brandName,
+    description: siteCopy.metadata.socialDescription,
+    type: "website",
+    images: [{ ...siteConfig.socialImage, alt: siteCopy.metadata.socialImageAlt }],
+  },
+  twitter: { card: "summary_large_image", images: [siteConfig.socialImage.url] },
+};
 
 export default function RootLayout({
   children,

@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
@@ -21,6 +21,16 @@ export function PhotoGallery({
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [transitionDirection, setTransitionDirection] = useState<"next" | "previous" | null>(null);
   const activePhoto = activeIndex === null ? null : collection.images[activeIndex];
+
+  useEffect(() => {
+    if (activeIndex === null || collection.images.length < 2) return;
+    const previous = collection.images[(activeIndex - 1 + collection.images.length) % collection.images.length];
+    const next = collection.images[(activeIndex + 1) % collection.images.length];
+    preloadImageSources([
+      previous.variants[siteConfig.imageVariants.full],
+      next.variants[siteConfig.imageVariants.full],
+    ]);
+  }, [activeIndex, collection.images]);
 
   useEffect(() => {
     const onPopState = () => setActiveIndex(null);
@@ -52,7 +62,7 @@ export function PhotoGallery({
       <div className="photo-grid">
         {collection.images.map((photo, index) => (
           <button className="photo-tile" key={photo.id} type="button" onClick={() => open(index)}>
-            <img src={photo.variants[siteConfig.imageVariants.display]} alt={photo.alt} loading={index > 1 ? "lazy" : "eager"} />
+            <ResponsivePhoto alt={photo.alt} fetchPriority={index === 0 ? "high" : "auto"} loading={index > 1 ? "lazy" : "eager"} photo={photo} sizes="(max-width: 780px) 100vw, (max-width: 1150px) 33vw, 25vw" variant="768" />
             <span>{formatPhotoName(collection, photo)}</span>
           </button>
         ))}
@@ -69,9 +79,11 @@ export function PhotoGallery({
           onClose={close}
           onNext={() => move(1)}
           onPrevious={() => move(-1)}
+          height={activePhoto.height}
           src={activePhoto.variants[siteConfig.imageVariants.full]}
           title={formatPhotoName(collection, activePhoto)}
           transitionDirection={transitionDirection}
+          width={activePhoto.width}
         >
           <nav aria-label={siteCopy.accessibility.photoNavigation} className="viewer-controls">
             <button className="viewer-step" type="button" onClick={() => move(-1)} aria-label={siteCopy.gallery.previousLabel}>{siteCopy.common.previous}</button>

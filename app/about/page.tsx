@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+import { ResponsiveImage } from "@/components/responsive-image";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/content/site-config";
@@ -10,7 +10,7 @@ export default function AboutPage() {
   return <main><div className="page-shell"><SiteHeader />
     <section className="about-copy"><div className="about-heading"><p className="eyebrow">{siteCopy.about.eyebrow}</p><h1>{siteCopy.about.title}</h1></div><div className="about-story">{siteCopy.about.story.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></section>
     <figure className="about-photo">
-      <img
+      <ResponsiveImage
         {...siteConfig.aboutPhoto}
         alt={siteCopy.about.photoAlt}
       />

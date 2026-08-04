@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
+import { ResponsivePhoto } from "@/components/responsive-image";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { routes, siteConfig } from "@/content/site-config";
+import { routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { collections, getCover } from "@/lib/catalog";
 
@@ -25,7 +25,7 @@ export default function PlacesPage() {
             const ratio = cover.width / cover.height;
             const layout = ratio > 2 ? "is-panoramic" : ratio > 1.15 ? "is-landscape" : "is-portrait";
             return <Link href={routes.place(collection.slug)} className={`place-archive-card ${layout}`} key={collection.slug}>
-              <div className="place-archive-image"><img src={cover.variants[siteConfig.imageVariants.thumbnail]} alt={siteCopy.common.coverAlt(collection.title)} /></div>
+              <div className="place-archive-image"><ResponsivePhoto alt={siteCopy.common.coverAlt(collection.title)} photo={cover} sizes="(max-width: 780px) 50vw, (max-width: 1100px) 30vw, 22vw" variant="768" /></div>
               <div className="place-archive-copy"><h3>{collection.title}</h3><div><span>{collection.location}</span><em>{siteCopy.common.photographs(collection.images.length)}</em></div></div>
             </Link>;
           })}
