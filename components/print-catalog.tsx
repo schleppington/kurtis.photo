@@ -2,7 +2,8 @@
 
 import { TransitionLink as Link, useNavigationTransition } from "@/components/navigation-transition";
 import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { PrintConfigurator } from "@/components/cart";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { routes, siteConfig } from "@/content/site-config";
@@ -20,16 +21,21 @@ export type PrintCatalogGroup = {
 };
 
 export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
-  const { runTransition } = useNavigationTransition();
+  const { runViewTransition } = useNavigationTransition();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [transitionDirection, setTransitionDirection] = useState<"next" | "previous" | null>(null);
+  const [transitionSourceKey, setTransitionSourceKey] = useState<string | null>(null);
   const catalogItems = useMemo(() => groups.flatMap((group) => group.items.map((item) => ({
     ...item,
     collection: group.collection,
     key: `${group.collection.slug}-${item.photo.id}`,
   }))), [groups]);
   const itemIndexByKey = useMemo(() => new Map(catalogItems.map((item, index) => [item.key, index])), [catalogItems]);
+  const activeIndexRef = useRef<number | null>(null);
   const activeItem = activeIndex === null ? null : catalogItems[activeIndex];
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
   useEffect(() => {
     if (activeIndex === null || catalogItems.length < 2) return;
@@ -40,21 +46,32 @@ export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
       next.photo.variants[siteConfig.imageVariants.full],
     ]);
   }, [activeIndex, catalogItems]);
-  const close = useCallback(() => setActiveIndex(null), []);
+  const close = useCallback(() => {
+    const index = activeIndexRef.current;
+    if (index === null) return;
+    const item = catalogItems[index];
+    flushSync(() => setTransitionSourceKey(item.key));
+    runViewTransition(() => {
+      setTransitionDirection(null);
+      setActiveIndex(null);
+    });
+  }, [catalogItems, runViewTransition]);
 
   function open(index: number) {
-    runTransition(() => {
+    const item = catalogItems[index];
+    flushSync(() => setTransitionSourceKey(item.key));
+    runViewTransition(() => {
       setTransitionDirection(null);
       setActiveIndex(index);
+      setTransitionSourceKey(null);
     });
   }
 
   function move(direction: -1 | 1) {
-    if (activeIndex === null) return;
-    runTransition(() => {
-      setTransitionDirection(direction === 1 ? "next" : "previous");
-      setActiveIndex((activeIndex + direction + catalogItems.length) % catalogItems.length);
-    });
+    const index = activeIndexRef.current;
+    if (index === null) return;
+    setTransitionDirection(direction === 1 ? "next" : "previous");
+    setActiveIndex((index + direction + catalogItems.length) % catalogItems.length);
   }
 
   return (
@@ -81,7 +98,7 @@ export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
                 return (
                   <button
                     aria-label={siteCopy.prints.enlargeLabel(title)}
-                    className="print-catalog-tile"
+                    className={activeIndex === null && transitionSourceKey === itemKey ? "print-catalog-tile is-view-transition-source" : "print-catalog-tile"}
                     key={itemKey}
                     onClick={() => {
                       if (catalogIndex !== undefined) open(catalogIndex);
@@ -94,7 +111,7 @@ export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
                 );
               })}
             </div>
-            <Link className="inline-link print-collection-link" href={routes.place(collection.slug)}>{siteCopy.prints.originalCollection} <span>↗</span></Link>
+            <Link className="inline-link print-collection-link" href={routes.place(collection.slug)} transitionDirection="back">{siteCopy.prints.originalCollection} <span>↗</span></Link>
           </section>
         ))}
       </section>

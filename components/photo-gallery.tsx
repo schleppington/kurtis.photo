@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigationTransition } from "@/components/navigation-transition";
 import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
@@ -10,7 +11,7 @@ import { displayDate, formatPhotoName, type Collection, type Photo } from "@/lib
 
 type GalleryCollection = Pick<Collection, "slug" | "title" | "images"> & { location?: string };
 
-function GalleryPhoto({ index, photo }: { index: number; photo: Photo }) {
+function GalleryPhoto({ index, photo, isTransitionSource }: { index: number; photo: Photo; isTransitionSource: boolean }) {
   const mediaRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -23,7 +24,7 @@ function GalleryPhoto({ index, photo }: { index: number; photo: Photo }) {
 
   return (
     <div
-      className={"photo-tile-media" + (loaded ? " is-loaded" : "")}
+      className={"photo-tile-media" + (loaded ? " is-loaded" : "") + (isTransitionSource ? " is-view-transition-source" : "")}
       ref={mediaRef}
       style={{ aspectRatio: photo.width + " / " + photo.height }}
     >
@@ -50,10 +51,15 @@ export function PhotoGallery({
   basePath?: string;
   showMetadata?: boolean;
 }) {
-  const { runTransition } = useNavigationTransition();
+  const { runViewTransition } = useNavigationTransition();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [transitionDirection, setTransitionDirection] = useState<"next" | "previous" | null>(null);
+  const [transitionSourceId, setTransitionSourceId] = useState<string | null>(null);
+  const activeIndexRef = useRef<number | null>(null);
   const activePhoto = activeIndex === null ? null : collection.images[activeIndex];
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
   useEffect(() => {
     if (activeIndex === null || collection.images.length < 2) return;
@@ -66,32 +72,49 @@ export function PhotoGallery({
   }, [activeIndex, collection.images]);
 
   useEffect(() => {
-    const onPopState = () => setActiveIndex(null);
+    const onPopState = () => {
+      const index = activeIndexRef.current;
+      if (index === null) return;
+      flushSync(() => setTransitionSourceId(collection.images[index].id));
+      runViewTransition(() => {
+        setTransitionDirection(null);
+        setActiveIndex(null);
+      });
+    };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [collection.images, runViewTransition]);
 
   function open(index: number) {
-    runTransition(() => {
-      window.history.pushState({}, "", `${basePath}/${collection.slug}/${collection.images[index].id}`);
+    const photo = collection.images[index];
+    flushSync(() => setTransitionSourceId(photo.id));
+    runViewTransition(() => {
+      window.history.pushState({}, "", `${basePath}/${collection.slug}/${photo.id}`);
       setTransitionDirection(null);
       setActiveIndex(index);
+      setTransitionSourceId(null);
     });
   }
 
   const close = useCallback(() => {
-    window.history.replaceState({}, "", `${basePath}/${collection.slug}`);
-    setActiveIndex(null);
-  }, [basePath, collection.slug]);
+    const index = activeIndexRef.current;
+    if (index === null) return;
+    const photo = collection.images[index];
+    flushSync(() => setTransitionSourceId(photo.id));
+    runViewTransition(() => {
+      window.history.replaceState({}, "", `${basePath}/${collection.slug}`);
+      setTransitionDirection(null);
+      setActiveIndex(null);
+    });
+  }, [basePath, collection.images, collection.slug, runViewTransition]);
 
   function move(direction: -1 | 1) {
-    if (activeIndex === null) return;
-    const nextIndex = (activeIndex + direction + collection.images.length) % collection.images.length;
-    runTransition(() => {
-      window.history.replaceState({}, "", `${basePath}/${collection.slug}/${collection.images[nextIndex].id}`);
-      setTransitionDirection(direction === 1 ? "next" : "previous");
-      setActiveIndex(nextIndex);
-    });
+    const index = activeIndexRef.current;
+    if (index === null) return;
+    const nextIndex = (index + direction + collection.images.length) % collection.images.length;
+    window.history.replaceState({}, "", `${basePath}/${collection.slug}/${collection.images[nextIndex].id}`);
+    setTransitionDirection(direction === 1 ? "next" : "previous");
+    setActiveIndex(nextIndex);
   }
 
   return (
@@ -99,7 +122,7 @@ export function PhotoGallery({
       <div className="photo-grid">
         {collection.images.map((photo, index) => (
           <button className="photo-tile" key={photo.id} type="button" onClick={() => open(index)}>
-            <GalleryPhoto index={index} photo={photo} />
+            <GalleryPhoto index={index} isTransitionSource={activeIndex === null && transitionSourceId === photo.id} photo={photo} />
             <span>{formatPhotoName(collection, photo)}</span>
           </button>
         ))}

@@ -11,15 +11,22 @@ import {
   type AnchorHTMLAttributes,
   type PropsWithChildren,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import * as React from "react";
+import { flushSync } from "react-dom";
+import { usePathname } from "next/navigation";
+
+export type NavigationDirection = "forward" | "back";
+
+type ReactTransitionApi = typeof React & { addTransitionType?: (type: string) => void };
+const supportsTransitionTypes = typeof (React as ReactTransitionApi).addTransitionType === "function";
 
 type NavigationContextValue = {
-  beginNavigation: (href: string) => void;
-  runTransition: (update: () => void) => void;
+  beginNavigation: (href: string, direction?: NavigationDirection) => void;
+  runViewTransition: (update: () => void) => void;
 };
 
 type ViewTransitionDocument = Document & {
-  startViewTransition?: (update: () => void) => {
+  startViewTransition?: (update: () => void | PromiseLike<void>) => {
     finished: Promise<unknown>;
     ready?: Promise<unknown>;
     updateCallbackDone?: Promise<unknown>;
@@ -47,6 +54,8 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
   const pendingTimeoutRef = useRef<number | null>(null);
+  const routeEnterTimeoutRef = useRef<number | null>(null);
+  const pendingDirectionRef = useRef<NavigationDirection | null>(null);
   const hasMountedRef = useRef(false);
 
   const clearPendingNavigation = useCallback(() => {
@@ -56,19 +65,21 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
     }
   }, []);
 
-  const beginNavigation = useCallback((href: string) => {
+  const beginNavigation = useCallback((href: string, direction: NavigationDirection = "forward") => {
     if (isCurrentLocation(href)) return;
+    pendingDirectionRef.current = direction;
     setIsNavigating(true);
+    document.documentElement.dataset.routeDirection = direction;
     if (pendingTimeoutRef.current !== null) {
       window.clearTimeout(pendingTimeoutRef.current);
     }
     pendingTimeoutRef.current = window.setTimeout(() => {
       pendingTimeoutRef.current = null;
       setIsNavigating(false);
-    }, 1500);
+    }, 1200);
   }, []);
 
-  const runTransition = useCallback((update: () => void) => {
+  const runViewTransition = useCallback((update: () => void) => {
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     const documentWithTransitions = document as ViewTransitionDocument;
     if (reducedMotion || !documentWithTransitions.startViewTransition) {
@@ -76,14 +87,29 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
       return;
     }
 
+    let didUpdate = false;
+    const applyUpdate = () => {
+      if (didUpdate) return;
+      didUpdate = true;
+      flushSync(update);
+    };
+
     try {
-      const transition = documentWithTransitions.startViewTransition(update);
+      const transition = documentWithTransitions.startViewTransition(applyUpdate);
       void transition.finished.catch(() => undefined);
       void transition.ready?.catch(() => undefined);
       void transition.updateCallbackDone?.catch(() => undefined);
     } catch {
-      update();
+      applyUpdate();
     }
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      pendingDirectionRef.current = "back";
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   useEffect(() => {
@@ -93,15 +119,28 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
     if (isInitialRender) return;
 
     const root = document.documentElement;
+    const direction = pendingDirectionRef.current ?? "forward";
+    pendingDirectionRef.current = null;
+    root.dataset.routeDirection = direction;
     root.classList.remove("route-enter");
     const frame = window.requestAnimationFrame(() => {
       setIsNavigating(false);
       root.classList.add("route-enter");
-      window.setTimeout(() => root.classList.remove("route-enter"), 520);
+      if (routeEnterTimeoutRef.current !== null) {
+        window.clearTimeout(routeEnterTimeoutRef.current);
+      }
+      routeEnterTimeoutRef.current = window.setTimeout(() => {
+        routeEnterTimeoutRef.current = null;
+        root.classList.remove("route-enter");
+      }, 520);
     });
 
     return () => {
       window.cancelAnimationFrame(frame);
+      if (routeEnterTimeoutRef.current !== null) {
+        window.clearTimeout(routeEnterTimeoutRef.current);
+        routeEnterTimeoutRef.current = null;
+      }
       root.classList.remove("route-enter");
     };
   }, [clearPendingNavigation, pathname]);
@@ -110,10 +149,13 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
     if (pendingTimeoutRef.current !== null) {
       window.clearTimeout(pendingTimeoutRef.current);
     }
+    if (routeEnterTimeoutRef.current !== null) {
+      window.clearTimeout(routeEnterTimeoutRef.current);
+    }
   }, []);
 
   return (
-    <NavigationContext.Provider value={{ beginNavigation, runTransition }}>
+    <NavigationContext.Provider value={{ beginNavigation, runViewTransition }}>
       <div className="navigation-progress" data-state={isNavigating ? "pending" : "idle"} aria-hidden="true" />
       {children}
     </NavigationContext.Provider>
@@ -122,38 +164,32 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
 
 type TransitionLinkProps = PropsWithChildren<
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> &
-  Omit<LinkProps, "href" | "onNavigate"> & { href: string }
+  Omit<LinkProps, "href" | "onNavigate"> & {
+    href: string;
+    onNavigate?: LinkProps["onNavigate"];
+    transitionDirection?: NavigationDirection;
+  }
 >;
 
-export function TransitionLink({ href, onClick, target, ...props }: TransitionLinkProps) {
-  const { beginNavigation, runTransition } = useNavigationTransition();
-  const router = useRouter();
+type LinkNavigateEvent = Parameters<NonNullable<LinkProps["onNavigate"]>>[0];
 
-  const handleClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
-    onClick?.(event);
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey ||
-      (target && target !== "_self")
-    ) return;
+export function TransitionLink({ href, onNavigate, transitionDirection = "forward", transitionTypes, ...props }: TransitionLinkProps) {
+  const { beginNavigation } = useNavigationTransition();
+  const routeTransitionTypes = transitionTypes ?? [transitionDirection === "back" ? "nav-back" : "nav-forward"];
+  const nativeTransitionTypes = supportsTransitionTypes ? routeTransitionTypes : undefined;
 
-    const targetUrl = new URL(href, window.location.href);
-    if (targetUrl.origin !== window.location.origin || isCurrentLocation(href)) return;
-    event.preventDefault();
-    beginNavigation(href);
-    runTransition(() => router.push(`${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`));
-  }, [beginNavigation, href, onClick, router, runTransition, target]);
+  const handleNavigate = useCallback((event: LinkNavigateEvent) => {
+    onNavigate?.(event);
+    if ("defaultPrevented" in event && event.defaultPrevented) return;
+    beginNavigation(href, transitionDirection);
+  }, [beginNavigation, href, onNavigate, transitionDirection]);
 
   return (
     <Link
       {...props}
       href={href}
-      onClick={handleClick}
-      target={target}
+      onNavigate={handleNavigate}
+      transitionTypes={nativeTransitionTypes}
     />
   );
 }

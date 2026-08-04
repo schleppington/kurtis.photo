@@ -16,7 +16,7 @@ export function SiteHeader() {
 
   return (
     <header className="site-header">
-      <Link className="wordmark" href={routes.home} aria-label={siteCopy.accessibility.home}>
+      <Link className="wordmark" href={routes.home} transitionDirection="back" aria-label={siteCopy.accessibility.home}>
         {siteConfig.brandName.split(".")[0]}<span>.</span>{siteConfig.brandName.split(".")[1]}
       </Link>
       <nav aria-label={siteCopy.accessibility.primaryNavigation}>

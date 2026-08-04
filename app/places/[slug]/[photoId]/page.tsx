@@ -43,7 +43,7 @@ export default async function PhotoPage({ params }: { params: Promise<{ slug: st
     <article className="photo-page">
       <ResponsivePhoto alt={photo.alt} className="photo-page-image" fetchPriority="high" loading="eager" photo={photo} sizes="(max-width: 780px) calc(100vw - 32px), min(1500px, calc(100vw - 64px))" variant="2400" />
       <div className="photo-page-details"><div><p className="eyebrow">{collection.location}</p><h1>{formatPhotoName(collection, photo)}</h1><p className="metadata-line">{[photo.metadata.cameraMake, photo.metadata.cameraBody].filter(Boolean).join(" ")}{displayDate(photo.metadata.captureDate) ? ` · ${displayDate(photo.metadata.captureDate)}` : ""}</p></div></div>
-      <nav className="photo-pagination" aria-label={siteCopy.accessibility.photoNavigation}><Link href={routes.photo(collection.slug, previous.id)}>{siteCopy.common.previous}</Link><Link href={routes.place(collection.slug)}>{siteCopy.common.allPhotographs}</Link><Link href={routes.photo(collection.slug, next.id)}>{siteCopy.common.next}</Link></nav>
+      <nav className="photo-pagination" aria-label={siteCopy.accessibility.photoNavigation}><Link href={routes.photo(collection.slug, previous.id)} transitionDirection="back">{siteCopy.common.previous}</Link><Link href={routes.place(collection.slug)} transitionDirection="back">{siteCopy.common.allPhotographs}</Link><Link href={routes.photo(collection.slug, next.id)}>{siteCopy.common.next}</Link></nav>
     </article>
     <SiteFooter />
   </div></main>;

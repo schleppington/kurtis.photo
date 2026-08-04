@@ -38,7 +38,7 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         <p>{collection.note ?? siteCopy.places.collectionFallback(collection.location)}</p>
       </section>
       <div className="collection-map-memory">
-        <Link className="inline-link" href={`${routes.home}?place=${encodeURIComponent(collection.slug)}`}>{siteCopy.places.showOnGlobe} <span>↗</span></Link>
+        <Link className="inline-link" href={`${routes.home}?place=${encodeURIComponent(collection.slug)}`} transitionDirection="back">{siteCopy.places.showOnGlobe} <span>↗</span></Link>
       </div>
       <PhotoGallery collection={collection} />
       <SiteFooter />

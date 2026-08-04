@@ -674,3 +674,56 @@ dialog.photo-viewer::backdrop { background: var(--paper); }
     transition: none;
   }
 }
+
+
+/* Coordinated native motion: named elements opt into browser View Transitions when supported. */
+.wordmark { view-transition-name: site-wordmark; }
+.photo-tile-media.is-view-transition-source,
+.viewer-main > img.viewer-photo,
+.photo-page-image { view-transition-name: photo-detail; }
+
+html.route-enter[data-route-direction="forward"] main {
+  animation: route-page-enter-forward .34s cubic-bezier(.2, .75, .22, 1) both;
+}
+html.route-enter[data-route-direction="back"] main {
+  animation: route-page-enter-back .34s cubic-bezier(.2, .75, .22, 1) both;
+}
+
+@keyframes route-page-enter-forward {
+  from { opacity: 0; transform: translateX(1.1%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes route-page-enter-back {
+  from { opacity: 0; transform: translateX(-1.1%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(photo-detail) {
+    animation-duration: .34s;
+    animation-timing-function: cubic-bezier(.2, .75, .22, 1);
+  }
+  ::view-transition-old(photo-detail),
+  ::view-transition-new(photo-detail),
+  ::view-transition-old(site-wordmark),
+  ::view-transition-new(site-wordmark) {
+    animation-duration: .34s;
+    animation-timing-function: cubic-bezier(.2, .75, .22, 1);
+  }
+  html[data-route-direction="back"]::view-transition-old(root) {
+    animation-name: view-transition-out-back;
+  }
+  html[data-route-direction="back"]::view-transition-new(root) {
+    animation-name: view-transition-in-back;
+  }
+}
+
+@keyframes view-transition-out-back {
+  to { opacity: 0; transform: translateX(1.2%); }
+}
+@keyframes view-transition-in-back {
+  from { opacity: 0; transform: translateX(-1.2%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.print-catalog-tile.is-view-transition-source > img { view-transition-name: photo-detail; }

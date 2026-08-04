@@ -42,6 +42,15 @@ export function PhotoLightbox({
   const closeRef = useRef<HTMLButtonElement>(null);
   const [closing, setClosing] = useState(false);
   const beginClose = useCallback(() => setClosing(true), []);
+  const setDialogRef = useCallback((dialog: HTMLDialogElement | null) => {
+    dialogRef.current = dialog;
+    if (!dialog || dialog.open) return;
+    try {
+      dialog.showModal();
+    } catch {
+      dialog.setAttribute("open", "");
+    }
+  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -94,7 +103,7 @@ export function PhotoLightbox({
       onMouseDown={(event) => {
         if (!closing && event.target === event.currentTarget) beginClose();
       }}
-      ref={dialogRef}
+      ref={setDialogRef}
     >
       <div className="viewer-topbar">
         <span>{counter}</span>

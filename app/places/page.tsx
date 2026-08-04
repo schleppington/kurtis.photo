@@ -13,7 +13,7 @@ export default function PlacesPage() {
       <section className="page-intro places-intro">
         <p className="eyebrow">{siteCopy.places.eyebrow}</p>
         <h1>{siteCopy.places.title}</h1>
-        <Link className="button button-outline" href={routes.home}>{siteCopy.places.exploreGlobe}</Link>
+        <Link className="button button-outline" href={routes.home} transitionDirection="back">{siteCopy.places.exploreGlobe}</Link>
       </section>
       <section className="index-section" aria-labelledby="index-title">
         <div className="index-header"><p className="eyebrow">{siteCopy.places.archiveEyebrow}</p><h2 id="index-title">{siteCopy.places.archiveTitle}</h2><span>{siteCopy.places.published(collections.length)}</span></div>
