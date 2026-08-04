@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { TransitionLink as Link } from "@/components/navigation-transition";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { SiteFooter } from "@/components/site-footer";
-import { siteConfig } from "@/content/site-config";
+import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { collections, getCollection, getCover } from "@/lib/catalog";
 
@@ -36,6 +37,9 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         <div><p className="eyebrow">{collection.location}</p><h1>{collection.title}</h1></div>
         <p>{collection.note ?? siteCopy.places.collectionFallback(collection.location)}</p>
       </section>
+      <div className="collection-map-memory">
+        <Link className="inline-link" href={`${routes.home}?place=${encodeURIComponent(collection.slug)}`}>{siteCopy.places.showOnGlobe} <span>↗</span></Link>
+      </div>
       <PhotoGallery collection={collection} />
       <SiteFooter />
     </div></main>

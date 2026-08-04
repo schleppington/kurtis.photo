@@ -425,8 +425,25 @@ html.route-enter main {
     animation-duration: .01ms !important;
   }
 }
-dialog.photo-viewer { border: 0; max-width: none; width: 100%; height: 100%; margin: 0; color: inherit; }
-dialog.photo-viewer::backdrop { background: transparent; }
+dialog.photo-viewer {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  width: 100vw;
+  min-width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  overflow-y: auto;
+  color: inherit;
+  background: var(--paper);
+}
+dialog.photo-viewer::backdrop { background: var(--paper); }
 .cart-backdrop { position: fixed; z-index: 49; inset: 0; border: 0; padding: 0; background: color-mix(in srgb, var(--ink) 24%, transparent); cursor: default; }
 
 /* Shared application shell */
@@ -445,6 +462,7 @@ dialog.photo-viewer::backdrop { background: transparent; }
 @media (max-width: 780px) {
   .global-header-shell .site-header { min-height: 0; }
   .globe-home { height: calc(100dvh - 100px); min-height: 520px; }
+}
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) { animation: view-transition-out .24s ease both; }
   ::view-transition-new(root) { animation: view-transition-in .3s cubic-bezier(.2, .75, .22, 1) both; }
@@ -452,4 +470,207 @@ dialog.photo-viewer::backdrop { background: transparent; }
 
 @keyframes view-transition-out { to { opacity: 0; transform: translateX(-1.2%); } }
 @keyframes view-transition-in { from { opacity: 0; transform: translateX(1.2%); } to { opacity: 1; transform: translateX(0); } }
+.collection-map-memory { margin: -1.4rem 0 2.8rem; border-bottom: 1px solid var(--line); padding-bottom: 1.1rem; }
+.globe-list-actions { display: flex; align-items: center; gap: .8rem; }
+.globe-surprise { border: 0; border-bottom: 1px solid color-mix(in srgb, var(--ocean) 55%, transparent); padding: 0 0 .1rem; background: transparent; color: var(--ocean); font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.globe-surprise:hover { border-bottom-color: var(--ocean); color: var(--ink); }
+.globe-photo-card { animation: globe-card-arrive .46s cubic-bezier(.2, .75, .22, 1) both; }
+.globe-photo-card-link > div { padding-bottom: 3.25rem; }
+.globe-card-related { position: absolute; right: 1.4rem; bottom: .8rem; left: 1.4rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .65rem; border-top: 1px solid var(--line); padding-top: .55rem; background: color-mix(in srgb, var(--paper-bright) 96%, transparent); }
+.globe-card-related > span { color: var(--muted); font-size: .64rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.globe-card-related button { border: 0; border-bottom: 1px solid color-mix(in srgb, var(--ocean) 50%, transparent); padding: 0; background: transparent; color: var(--ocean); font-size: .72rem; font-weight: 700; }
+.globe-card-related button:hover { border-bottom-color: var(--ocean); color: var(--ink); }
+@keyframes globe-card-arrive {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 780px) {
+  .collection-map-memory { margin: -1rem 0 2rem; }
+  .globe-photo-card-link > div { padding-bottom: 2.85rem; }
+  .globe-card-related { right: .9rem; bottom: .55rem; left: .9rem; gap: .25rem .45rem; padding-top: .4rem; }
+  .globe-card-related > span { font-size: .57rem; }
+  .globe-card-related button { font-size: .65rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .globe-photo-card { animation: none; }
+}
+/* Globe actions and selected-place continuity */
+.globe-surprise-control {
+  position: absolute;
+  z-index: 5;
+  top: 1rem;
+  left: 1rem;
+}
+.globe-surprise {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 42px;
+  padding: .65rem .85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-bright) 92%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 12%, transparent);
+  backdrop-filter: blur(9px);
+  color: var(--ink);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.globe-surprise > span {
+  color: var(--ocean);
+  font-size: 1rem;
+  line-height: 1;
+}
+.globe-surprise:hover:not(:disabled) {
+  border-color: var(--ocean);
+  background: var(--paper-bright);
+  color: var(--ocean);
+  transform: translateY(-1px);
+}
+.globe-surprise:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.globe-photo-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+}
+.globe-photo-card-link {
+  flex: 1 1 auto;
+  min-height: 250px;
+}
+.globe-photo-card-link > div {
+  padding-bottom: 1.4rem;
+}
+.globe-card-related {
+  position: static;
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .55rem;
+  border-top: 1px solid var(--line);
+  padding: .6rem 1.4rem .7rem;
+  background: color-mix(in srgb, var(--paper-bright) 96%, transparent);
+}
+.globe-card-related > span {
+  color: var(--muted);
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.globe-card-related button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: .25rem .55rem;
+  border: 1px solid color-mix(in srgb, var(--ocean) 42%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ocean) 6%, var(--paper-bright));
+  color: var(--ocean);
+  font-size: .72rem;
+  font-weight: 700;
+  transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.globe-card-related button:hover {
+  border-color: var(--ocean);
+  background: color-mix(in srgb, var(--ocean) 12%, var(--paper-bright));
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+/* Album tiles reserve their final geometry before the network responds. */
+.photo-tile-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--driftwood);
+}
+.photo-tile-media::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  background: linear-gradient(110deg, color-mix(in srgb, var(--driftwood) 82%, var(--paper-bright)) 8%, color-mix(in srgb, var(--paper-bright) 65%, var(--driftwood)) 44%, color-mix(in srgb, var(--driftwood) 82%, var(--paper-bright)) 82%);
+  background-size: 220% 100%;
+  animation: photo-tile-shimmer 1.5s ease-in-out infinite;
+  transition: opacity .35s ease;
+}
+.photo-tile-media > img {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .45s ease, transform .4s ease;
+}
+.photo-tile-media.is-loaded::before {
+  opacity: 0;
+  animation: none;
+}
+.photo-tile-media.is-loaded > img {
+  opacity: 1;
+}
+.photo-tile:hover .photo-tile-media > img {
+  transform: none;
+}
+.photo-tile:hover .photo-tile-media.is-loaded > img {
+  transform: scale(1.025);
+}
+@keyframes photo-tile-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (max-width: 780px) {
+  .globe-surprise-control {
+    top: .75rem;
+    left: .75rem;
+  }
+  .globe-surprise {
+    min-height: 38px;
+    padding: .55rem .7rem;
+  }
+  .globe-photo-card {
+    max-height: 240px;
+  }
+  .globe-photo-card-link {
+    min-height: 150px;
+  }
+  .globe-photo-card-link > div {
+    padding-bottom: .9rem;
+  }
+  .globe-card-related {
+    gap: .3rem .45rem;
+    padding: .55rem .9rem .6rem;
+  }
+  .globe-card-related button {
+    min-height: 26px;
+    font-size: .65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .globe-surprise,
+  .globe-card-related button {
+    transition: none;
+  }
+  .photo-tile-media::before {
+    animation: none;
+  }
+  .photo-tile-media > img {
+    transition: none;
+  }
 }

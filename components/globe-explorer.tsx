@@ -36,6 +36,64 @@ type GlobeResolution = "50m" | "10m";
 type GlobeGeometry = { land: FeatureCollection<Geometry>; countryBorders: MultiLineString };
 type PlaceProperties = { slug: string; title: string };
 type ClusterMarker = { marker: MapLibreMarker; element: HTMLSpanElement };
+type GlobeCameraMemory = {
+  center: [number, number];
+  zoom: number;
+  bearing: number;
+  pitch: number;
+};
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function readGlobeCamera(): GlobeCameraMemory | null {
+  try {
+    const raw = window.sessionStorage.getItem(globeConfig.memory.storageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { center?: unknown; zoom?: unknown; bearing?: unknown; pitch?: unknown };
+    if (!Array.isArray(parsed.center) || parsed.center.length !== 2) return null;
+    const [longitude, latitude] = parsed.center;
+    if (
+      !isFiniteNumber(longitude) ||
+      !isFiniteNumber(latitude) ||
+      !isFiniteNumber(parsed.zoom) ||
+      !isFiniteNumber(parsed.bearing) ||
+      !isFiniteNumber(parsed.pitch)
+    ) return null;
+    return {
+      center: [longitude, latitude],
+      zoom: parsed.zoom,
+      bearing: parsed.bearing,
+      pitch: parsed.pitch,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function rememberGlobeCamera(map: MapLibreMap) {
+  const center = map.getCenter();
+  try {
+    window.sessionStorage.setItem(globeConfig.memory.storageKey, JSON.stringify({
+      center: [center.lng, center.lat],
+      zoom: map.getZoom(),
+      bearing: map.getBearing(),
+      pitch: map.getPitch(),
+    }));
+  } catch {
+    // Session storage may be disabled; the map remains fully usable without memory.
+  }
+}
+
+function placeDistance(first: GlobePlace, second: GlobePlace) {
+  const latitude = (first.coordinates.latitude + second.coordinates.latitude) / 2;
+  const longitudeScale = Math.cos(latitude * Math.PI / 180);
+  return Math.hypot(
+    first.coordinates.latitude - second.coordinates.latitude,
+    (first.coordinates.longitude - second.coordinates.longitude) * longitudeScale,
+  );
+}
 
 const emptyPoints: FeatureCollection<Point, PlaceProperties> = { type: "FeatureCollection", features: [] };
 
@@ -273,6 +331,13 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     [places],
   );
   const selectedPlace = selectedSlug ? placeBySlug.get(selectedSlug) ?? null : null;
+  const nearbyPlaces = useMemo(() => {
+    if (!selectedPlace) return [];
+    return places
+      .filter((place) => place.slug !== selectedPlace.slug)
+      .sort((first, second) => placeDistance(selectedPlace, first) - placeDistance(selectedPlace, second))
+      .slice(0, 2);
+  }, [places, selectedPlace]);
   const visiblePlaces = useMemo(() => {
     const query = filter.trim().toLocaleLowerCase();
     if (!query) return places;
@@ -304,6 +369,14 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     setSelectedSlug(slug);
     if (window.matchMedia(globeConfig.mediaQueries.mobile).matches) setSheetOpen(false);
   }, [placeBySlug]);
+
+  const surpriseMe = useCallback(() => {
+    const candidates = visiblePlaces.length > 1 ? visiblePlaces : places;
+    const eligible = candidates.filter((place) => place.slug !== selectedSlug);
+    const pool = eligible.length > 0 ? eligible : candidates;
+    const place = pool[Math.floor(Math.random() * pool.length)];
+    if (place) choosePlace(place.slug);
+  }, [choosePlace, places, selectedSlug, visiblePlaces]);
 
   const clearSelection = useCallback(() => {
     if (!selectedSlug && mapRef.current) moveCamera(mapRef.current, null);
@@ -341,6 +414,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     let cancelled = false;
     let instance: MapLibreMap | null = null;
     let lightingTimer: ReturnType<typeof setInterval> | null = null;
+    let cameraMemoryFrame: number | null = null;
     const clusterMarkers = clusterMarkersRef.current;
     const geometryAbortController = new AbortController();
 
@@ -354,16 +428,17 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
           loadGlobeGeometry("50m", geometryAbortController.signal),
         ]);
         if (cancelled) return;
+        const rememberedCamera = readGlobeCamera();
         const palette = globePalette();
         instance = new MapConstructor({
           container,
           style: makeGlobeStyle(places, palette, geometry, new Date()),
-          center: globeConfig.worldView.center,
-          zoom: globeConfig.worldView.zoom,
+          center: rememberedCamera?.center ?? globeConfig.worldView.center,
+          zoom: rememberedCamera?.zoom ?? globeConfig.worldView.zoom,
           minZoom: globeConfig.zoom.min,
           maxZoom: globeConfig.zoom.max,
-          pitch: 0,
-          bearing: 0,
+          pitch: rememberedCamera?.pitch ?? 0,
+          bearing: rememberedCamera?.bearing ?? 0,
           dragPan: true,
           scrollZoom: true,
           touchZoomRotate: true,
@@ -374,6 +449,15 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
         });
         mapRef.current = instance;
         instance.setPadding(worldPadding());
+        const scheduleCameraMemory = () => {
+          if (cameraMemoryFrame !== null) return;
+          cameraMemoryFrame = window.requestAnimationFrame(() => {
+            cameraMemoryFrame = null;
+            if (!cancelled && instance) rememberGlobeCamera(instance);
+          });
+        };
+        instance.on("move", scheduleCameraMemory);
+        scheduleCameraMemory();
 
         const updateClusterMarkers = () => {
           if (!instance?.isStyleLoaded()) return;
@@ -447,7 +531,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
 
           const reducedMotion = window.matchMedia(globeConfig.mediaQueries.reducedMotion).matches;
           const opensOnPlace = new URLSearchParams(window.location.search).has(globeConfig.queries.selectedPlace);
-          if (!reducedMotion && !opensOnPlace) {
+          if (!reducedMotion && !opensOnPlace && !rememberedCamera) {
             instance.jumpTo({ ...globeConfig.introView, bearing: 0, pitch: 0 });
             instance.easeTo({
               ...globeConfig.worldView,
@@ -498,6 +582,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     return () => {
       cancelled = true;
       geometryAbortController.abort();
+      if (cameraMemoryFrame !== null) window.cancelAnimationFrame(cameraMemoryFrame);
       if (lightingTimer) clearInterval(lightingTimer);
       for (const { marker } of clusterMarkers.values()) marker.remove();
       clusterMarkers.clear();
@@ -598,8 +683,15 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
           <button disabled={!mapReady} onClick={clearSelection} type="button">{siteCopy.globe.reset}</button>
         </div>
 
+        <div className="globe-surprise-control">
+          <button className="globe-surprise" disabled={!mapReady || places.length < 2} onClick={surpriseMe} type="button">
+            <span aria-hidden="true">*</span>
+            {siteCopy.globe.surprise}
+          </button>
+        </div>
+
         {selectedPlace ? (
-          <article aria-live="polite" className="globe-photo-card">
+          <article aria-live="polite" className="globe-photo-card" key={selectedPlace.slug}>
             <Link className="globe-photo-card-link" href={routes.place(selectedPlace.slug)} aria-label={siteCopy.globe.openCollectionLabel(selectedPlace.title)}>
               <ResponsiveImage alt={selectedPlace.cover.alt} height={selectedPlace.cover.height} sizes="(max-width: 780px) 110px, 180px" src={selectedPlace.cover.src} srcSet={selectedPlace.cover.srcSet} width={selectedPlace.cover.width} />
               <div>
@@ -610,6 +702,14 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
                 <span className="inline-link">{siteCopy.globe.openCollection} <span>↗</span></span>
               </div>
             </Link>
+            {nearbyPlaces.length > 0 ? (
+              <div aria-label={siteCopy.globe.nearbyLabel} className="globe-card-related" role="group">
+                <span>{siteCopy.globe.nearby}</span>
+                {nearbyPlaces.map((place) => (
+                  <button key={place.slug} onClick={() => choosePlace(place.slug)} type="button">{place.title}</button>
+                ))}
+              </div>
+            ) : null}
             <button aria-label={siteCopy.globe.closeSelected} className="globe-card-close" onClick={clearSelection} type="button">×</button>
           </article>
         ) : (

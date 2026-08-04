@@ -4,6 +4,7 @@ export const globeConfig = {
   zoom: { min: 0, max: 9.5, selectedPlace: 9.2, controlStep: 0.8, clusterExpansionOffset: 1 },
   padding: { desktopBottom: 138, mobileBottom: 92 },
   queries: { selectedPlace: "place" },
+  memory: { storageKey: "kurtis.photo.globe.camera" },
   mediaQueries: {
     mobile: "(max-width: 780px)",
     reducedMotion: "(prefers-reduced-motion: reduce)",
