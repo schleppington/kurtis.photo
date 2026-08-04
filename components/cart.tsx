@@ -1,7 +1,7 @@
 "use client";
 
 import { ResponsivePhoto } from "@/components/responsive-image";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { commerceConfig, routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import {
@@ -108,7 +108,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider value={value}>
-      {children}
+      <div className="app-content" inert={open}>
+        {children}
+      </div>
+      {open ? (
+        <button aria-label={`${siteCopy.cart.close} ${siteCopy.cart.label.toLowerCase()}`} className="cart-backdrop" onClick={() => setOpen(false)} tabIndex={-1} type="button" />
+      ) : null}
       <CartPanel />
     </CartContext.Provider>
   );
@@ -123,11 +128,11 @@ export function CheckoutReturnHandler({ confirmed }: { confirmed: boolean }) {
 }
 
 export function CartToggle() {
-  const { lines, setOpen } = useCart();
+  const { lines, open, setOpen } = useCart();
   const totalItems = lines.reduce((sum, line) => sum + line.quantity, 0);
   if (totalItems === 0) return null;
   return (
-    <button className="cart-toggle" type="button" onClick={() => setOpen(true)}>
+    <button aria-controls="shopping-cart" aria-expanded={open} className="cart-toggle" type="button" onClick={() => setOpen(true)}>
       {siteCopy.cart.toggle} <span aria-label={siteCopy.cart.itemCount(totalItems)}>· {totalItems}</span>
     </button>
   );
@@ -166,6 +171,9 @@ export function PrintConfigurator({ collectionSlug, photo }: { collectionSlug: s
 
 function CartPanel() {
   const { lines, open, setOpen, remove, updateQuantity } = useCart();
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const resolvedLines = lines.flatMap((line) => {
@@ -175,6 +183,29 @@ function CartPanel() {
     return collection && photo && option ? [{ line, collection, photo, option }] : [];
   });
   const subtotal = resolvedLines.reduce((sum, item) => sum + item.option.price * item.line.quantity, 0);
+
+  useEffect(() => {
+    if (!open) {
+      previouslyFocusedRef.current?.focus({ preventScroll: true });
+      previouslyFocusedRef.current = null;
+      return;
+    }
+
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = window.requestAnimationFrame(() => closeRef.current?.focus({ preventScroll: true }));
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, setOpen]);
 
   async function checkout() {
     setError(null);
@@ -196,13 +227,13 @@ function CartPanel() {
   }
 
   return (
-    <aside className={`cart-panel ${open ? "is-open" : ""}`} inert={!open} aria-label={siteCopy.cart.label}>
+    <aside aria-labelledby={titleId} aria-modal="true" className={`cart-panel ${open ? "is-open" : ""}`} id="shopping-cart" inert={!open} role="dialog">
       <div className="cart-panel-header">
         <div>
           <p className="eyebrow">{siteCopy.cart.eyebrow}</p>
-          <h2>{siteCopy.cart.title}</h2>
+          <h2 id={titleId}>{siteCopy.cart.title}</h2>
         </div>
-        <button className="text-button" type="button" onClick={() => setOpen(false)}>{siteCopy.cart.close}</button>
+        <button className="text-button" ref={closeRef} type="button" onClick={() => setOpen(false)}>{siteCopy.cart.close}</button>
       </div>
       {resolvedLines.length === 0 ? (
         <p className="empty-cart">{siteCopy.cart.empty}</p>

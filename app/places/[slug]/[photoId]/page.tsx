@@ -3,7 +3,6 @@ import { TransitionLink as Link } from "@/components/navigation-transition";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { collections, displayDate, formatPhotoName, getCollection, getPhoto } from "@/lib/catalog";
@@ -41,7 +40,6 @@ export default async function PhotoPage({ params }: { params: Promise<{ slug: st
   const previous = collection.images[(index - 1 + collection.images.length) % collection.images.length];
   const next = collection.images[(index + 1) % collection.images.length];
   return <main><div className="page-shell">
-    <SiteHeader />
     <article className="photo-page">
       <ResponsivePhoto alt={photo.alt} className="photo-page-image" fetchPriority="high" loading="eager" photo={photo} sizes="(max-width: 780px) calc(100vw - 32px), min(1500px, calc(100vw - 64px))" variant="2400" />
       <div className="photo-page-details"><div><p className="eyebrow">{collection.location}</p><h1>{formatPhotoName(collection, photo)}</h1><p className="metadata-line">{[photo.metadata.cameraMake, photo.metadata.cameraBody].filter(Boolean).join(" ")}{displayDate(photo.metadata.captureDate) ? ` · ${displayDate(photo.metadata.captureDate)}` : ""}</p></div></div>

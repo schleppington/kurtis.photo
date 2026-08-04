@@ -53,7 +53,7 @@ test("server-renders kurtis.photo", async () => {
   assert.match(html, /Costa Rica/);
   assert.match(html, /Explore places/);
   assert.match(html, /Photo index/);
-  assert.match(html, /href="\/">Places<\/a>/);
+  assert.match(html, /href="\/"[^>]*>Places<\/a>/);
   assert.doesNotMatch(html, /From the archive|Find a place, then wander/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });

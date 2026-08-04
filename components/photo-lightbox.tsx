@@ -38,20 +38,31 @@ export function PhotoLightbox({
   width: number;
 }) {
   const titleId = useId();
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const [closing, setClosing] = useState(false);
   const beginClose = useCallback(() => setClosing(true), []);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
     const previousOverflow = document.body.style.overflow;
     const previousPaddingRight = document.body.style.paddingRight;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = "hidden";
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
-    closeRef.current?.focus({ preventScroll: true });
+    if (dialog) {
+      try {
+        if (!dialog.open) dialog.showModal();
+      } catch {
+        dialog.setAttribute("open", "");
+      }
+    }
+    const frame = window.requestAnimationFrame(() => closeRef.current?.focus({ preventScroll: true }));
 
     return () => {
+      window.cancelAnimationFrame(frame);
+      if (dialog?.open) dialog.close();
       document.body.style.overflow = previousOverflow;
       document.body.style.paddingRight = previousPaddingRight;
       previouslyFocused?.focus({ preventScroll: true });
@@ -72,17 +83,18 @@ export function PhotoLightbox({
   const directionClass = transitionDirection ? ` is-${transitionDirection}` : "";
 
   return (
-    <div
+    <dialog
       aria-labelledby={titleId}
       aria-modal="true"
       className={`photo-viewer${closing ? " is-closing" : ""}`}
+      onCancel={(event) => { event.preventDefault(); beginClose(); }}
       onAnimationEnd={(event) => {
         if (closing && event.target === event.currentTarget && event.animationName === "viewer-backdrop-out") onClose();
       }}
       onMouseDown={(event) => {
         if (!closing && event.target === event.currentTarget) beginClose();
       }}
-      role="dialog"
+      ref={dialogRef}
     >
       <div className="viewer-topbar">
         <span>{counter}</span>
@@ -101,6 +113,6 @@ export function PhotoLightbox({
         </div>
         {detailsAside ? <aside className="viewer-details-aside">{detailsAside}</aside> : null}
       </div>
-    </div>
+    </dialog>
   );
 }

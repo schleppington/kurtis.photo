@@ -1,6 +1,6 @@
 "use client";
 
-import { TransitionLink as Link } from "@/components/navigation-transition";
+import { TransitionLink as Link, useNavigationTransition } from "@/components/navigation-transition";
 import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import { PrintConfigurator } from "@/components/cart";
@@ -20,6 +20,7 @@ export type PrintCatalogGroup = {
 };
 
 export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
+  const { runTransition } = useNavigationTransition();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [transitionDirection, setTransitionDirection] = useState<"next" | "previous" | null>(null);
   const catalogItems = useMemo(() => groups.flatMap((group) => group.items.map((item) => ({
@@ -42,14 +43,18 @@ export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
   const close = useCallback(() => setActiveIndex(null), []);
 
   function open(index: number) {
-    setTransitionDirection(null);
-    setActiveIndex(index);
+    runTransition(() => {
+      setTransitionDirection(null);
+      setActiveIndex(index);
+    });
   }
 
   function move(direction: -1 | 1) {
     if (activeIndex === null) return;
-    setTransitionDirection(direction === 1 ? "next" : "previous");
-    setActiveIndex((activeIndex + direction + catalogItems.length) % catalogItems.length);
+    runTransition(() => {
+      setTransitionDirection(direction === 1 ? "next" : "previous");
+      setActiveIndex((activeIndex + direction + catalogItems.length) % catalogItems.length);
+    });
   }
 
   return (

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { collections, getCollection, getCover } from "@/lib/catalog";
@@ -33,7 +32,6 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   if (!collection) notFound();
   return (
     <main><div className="page-shell">
-      <SiteHeader />
       <section className="collection-intro">
         <div><p className="eyebrow">{collection.location}</p><h1>{collection.title}</h1></div>
         <p>{collection.note ?? siteCopy.places.collectionFallback(collection.location)}</p>

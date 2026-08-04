@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { getPortraitCollection, getPortraitCover, portraitCollections } from "@/lib/portraits";
@@ -32,7 +31,7 @@ export default async function PortraitCollectionPage({ params }: { params: Promi
   const collection = getPortraitCollection(slug);
   if (!collection) notFound();
 
-  return <main><div className="page-shell"><SiteHeader />
+  return <main><div className="page-shell">
     <section className="collection-intro portrait-collection-intro"><div><p className="eyebrow">{siteCopy.portraits.sessionEyebrow}</p><h1>{collection.title}</h1></div><p>{collection.note ?? siteCopy.portraits.sessionFallback}</p></section>
     <PhotoGallery collection={collection} basePath={routes.portraits} showMetadata={false} />
     <SiteFooter />

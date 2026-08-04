@@ -1,6 +1,5 @@
 import { buildPhotoSrcSet } from "@/components/responsive-image";
 import { GlobeExplorer, type GlobePlace } from "@/components/globe-explorer";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/content/site-config";
 import { collections, getCover } from "@/lib/catalog";
 
@@ -27,7 +26,6 @@ export default function Home() {
   return (
     <main className="globe-home">
       <div className="globe-home-shell">
-        <SiteHeader />
         <GlobeExplorer places={places} />
       </div>
     </main>

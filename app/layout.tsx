@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { CartProvider } from "@/components/cart";
+import { PageAnnouncer } from "@/components/page-announcer";
+import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/content/site-config";
 import { NavigationTransitionProvider } from "@/components/navigation-transition";
 import { siteCopy } from "@/content/site-copy";
@@ -31,7 +33,15 @@ export default function RootLayout({
     <html lang={siteConfig.language}>
       <body>
         <NavigationTransitionProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            <PageAnnouncer />
+            <div className="app-shell">
+              <div className="global-header-shell page-shell">
+                <SiteHeader />
+              </div>
+              {children}
+            </div>
+          </CartProvider>
         </NavigationTransitionProvider>
         {process.env.CF_ANALYTICS_TOKEN ? (
           <Script

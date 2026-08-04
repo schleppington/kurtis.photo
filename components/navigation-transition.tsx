@@ -11,15 +11,24 @@ import {
   type AnchorHTMLAttributes,
   type PropsWithChildren,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type NavigationContextValue = {
   beginNavigation: (href: string) => void;
+  runTransition: (update: () => void) => void;
+};
+
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (update: () => void) => {
+    finished: Promise<unknown>;
+    ready?: Promise<unknown>;
+    updateCallbackDone?: Promise<unknown>;
+  };
 };
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
-function useNavigationTransition() {
+export function useNavigationTransition() {
   const context = useContext(NavigationContext);
   if (!context) throw new Error("Navigation transitions must be used inside the provider.");
   return context;
@@ -56,7 +65,25 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
     pendingTimeoutRef.current = window.setTimeout(() => {
       pendingTimeoutRef.current = null;
       setIsNavigating(false);
-    }, 10000);
+    }, 1500);
+  }, []);
+
+  const runTransition = useCallback((update: () => void) => {
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const documentWithTransitions = document as ViewTransitionDocument;
+    if (reducedMotion || !documentWithTransitions.startViewTransition) {
+      update();
+      return;
+    }
+
+    try {
+      const transition = documentWithTransitions.startViewTransition(update);
+      void transition.finished.catch(() => undefined);
+      void transition.ready?.catch(() => undefined);
+      void transition.updateCallbackDone?.catch(() => undefined);
+    } catch {
+      update();
+    }
   }, []);
 
   useEffect(() => {
@@ -86,7 +113,7 @@ export function NavigationTransitionProvider({ children }: PropsWithChildren) {
   }, []);
 
   return (
-    <NavigationContext.Provider value={{ beginNavigation }}>
+    <NavigationContext.Provider value={{ beginNavigation, runTransition }}>
       <div className="navigation-progress" data-state={isNavigating ? "pending" : "idle"} aria-hidden="true" />
       {children}
     </NavigationContext.Provider>
@@ -98,14 +125,35 @@ type TransitionLinkProps = PropsWithChildren<
   Omit<LinkProps, "href" | "onNavigate"> & { href: string }
 >;
 
-export function TransitionLink({ href, ...props }: TransitionLinkProps) {
-  const { beginNavigation } = useNavigationTransition();
+export function TransitionLink({ href, onClick, target, ...props }: TransitionLinkProps) {
+  const { beginNavigation, runTransition } = useNavigationTransition();
+  const router = useRouter();
+
+  const handleClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(event);
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      (target && target !== "_self")
+    ) return;
+
+    const targetUrl = new URL(href, window.location.href);
+    if (targetUrl.origin !== window.location.origin || isCurrentLocation(href)) return;
+    event.preventDefault();
+    beginNavigation(href);
+    runTransition(() => router.push(`${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`));
+  }, [beginNavigation, href, onClick, router, runTransition, target]);
 
   return (
     <Link
       {...props}
       href={href}
-      onNavigate={() => beginNavigation(href)}
+      onClick={handleClick}
+      target={target}
     />
   );
 }

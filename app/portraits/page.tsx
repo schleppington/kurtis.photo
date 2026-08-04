@@ -1,7 +1,6 @@
 import { ResponsivePhoto } from "@/components/responsive-image";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { portraitShowcase } from "@/content/portrait-showcase";
 import { routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
@@ -17,7 +16,7 @@ export default function PortraitsPage() {
     return { ...selection, collection, photo };
   }).filter((selection) => selection !== null);
 
-  return <main><div className="page-shell"><SiteHeader />
+  return <main><div className="page-shell">
     <section className="portrait-editorial-hero">
       <div className="portrait-hero-collage">
         {heroPhotos.map(({ collection, layout, photo }, index) => <figure className={`portrait-hero-frame is-${layout}`} key={photo.id}>

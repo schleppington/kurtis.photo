@@ -1,7 +1,6 @@
 import { ResponsivePhoto } from "@/components/responsive-image";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { collections, getCover } from "@/lib/catalog";
@@ -11,7 +10,6 @@ export const metadata = { title: siteCopy.places.metadataTitle };
 export default function PlacesPage() {
   return (
     <main><div className="page-shell">
-      <SiteHeader />
       <section className="page-intro places-intro">
         <p className="eyebrow">{siteCopy.places.eyebrow}</p>
         <h1>{siteCopy.places.title}</h1>

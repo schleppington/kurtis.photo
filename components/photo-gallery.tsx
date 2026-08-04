@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useNavigationTransition } from "@/components/navigation-transition";
 import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { routes, siteConfig } from "@/content/site-config";
@@ -18,6 +19,7 @@ export function PhotoGallery({
   basePath?: string;
   showMetadata?: boolean;
 }) {
+  const { runTransition } = useNavigationTransition();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [transitionDirection, setTransitionDirection] = useState<"next" | "previous" | null>(null);
   const activePhoto = activeIndex === null ? null : collection.images[activeIndex];
@@ -39,9 +41,11 @@ export function PhotoGallery({
   }, []);
 
   function open(index: number) {
-    window.history.pushState({}, "", `${basePath}/${collection.slug}/${collection.images[index].id}`);
-    setTransitionDirection(null);
-    setActiveIndex(index);
+    runTransition(() => {
+      window.history.pushState({}, "", `${basePath}/${collection.slug}/${collection.images[index].id}`);
+      setTransitionDirection(null);
+      setActiveIndex(index);
+    });
   }
 
   const close = useCallback(() => {
@@ -52,9 +56,11 @@ export function PhotoGallery({
   function move(direction: -1 | 1) {
     if (activeIndex === null) return;
     const nextIndex = (activeIndex + direction + collection.images.length) % collection.images.length;
-    window.history.replaceState({}, "", `${basePath}/${collection.slug}/${collection.images[nextIndex].id}`);
-    setTransitionDirection(direction === 1 ? "next" : "previous");
-    setActiveIndex(nextIndex);
+    runTransition(() => {
+      window.history.replaceState({}, "", `${basePath}/${collection.slug}/${collection.images[nextIndex].id}`);
+      setTransitionDirection(direction === 1 ? "next" : "previous");
+      setActiveIndex(nextIndex);
+    });
   }
 
   return (

@@ -2,7 +2,6 @@ import { TransitionLink as Link } from "@/components/navigation-transition";
 import { CheckoutReturnHandler } from "@/components/cart";
 import { PrintCatalog, type PrintCatalogGroup } from "@/components/print-catalog";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { commerceConfig, routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
 import { getAvailablePrints } from "@/lib/catalog";
@@ -37,7 +36,6 @@ export default async function PrintsPage({
 
   return (
     <main><div className="page-shell">
-      <SiteHeader />
       <CheckoutReturnHandler confirmed={orderReceived} />
       {orderReceived ? (
         <section className="order-confirmation" aria-live="polite">
