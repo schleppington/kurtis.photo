@@ -36,7 +36,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 22:48:09"
-      }
+      },
+      "placeholderColor": "#87a9c8"
     },
     {
       "id": "dscf7351",
@@ -64,7 +65,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 22:51:36"
-      }
+      },
+      "placeholderColor": "#3a6b8c"
     },
     {
       "id": "dscf7369-2",
@@ -92,7 +94,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:07:26"
-      }
+      },
+      "placeholderColor": "#3e8ab9"
     },
     {
       "id": "dscf7373",
@@ -120,7 +123,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:14:31"
-      }
+      },
+      "placeholderColor": "#508cb3"
     },
     {
       "id": "dscf7377",
@@ -148,7 +152,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:17:07"
-      }
+      },
+      "placeholderColor": "#2e8ab4"
     },
     {
       "id": "dscf7385",
@@ -176,7 +181,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:22:24"
-      }
+      },
+      "placeholderColor": "#182a28"
     },
     {
       "id": "dscf7428",
@@ -204,7 +210,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:31:25"
-      }
+      },
+      "placeholderColor": "#297d9e"
     },
     {
       "id": "dscf7433",
@@ -232,7 +239,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:32:53"
-      }
+      },
+      "placeholderColor": "#8fb9db"
     },
     {
       "id": "dscf7447",
@@ -260,7 +268,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:33:32"
-      }
+      },
+      "placeholderColor": "#244859"
     },
     {
       "id": "dscf7455",
@@ -288,7 +297,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:03:09 23:34:15"
-      }
+      },
+      "placeholderColor": "#555859"
     }
   ]
 }

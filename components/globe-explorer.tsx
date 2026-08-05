@@ -1,7 +1,7 @@
 "use client";
 
 
-import { ResponsiveImage } from "@/components/responsive-image";
+import { ImageFrame } from "@/components/photo-frame";
 import type { Feature, FeatureCollection, Geometry, MultiLineString, Point } from "geojson";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -693,7 +693,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
         {selectedPlace ? (
           <article aria-live="polite" className="globe-photo-card" key={selectedPlace.slug}>
             <Link className="globe-photo-card-link" href={routes.place(selectedPlace.slug)} aria-label={siteCopy.globe.openCollectionLabel(selectedPlace.title)}>
-              <ResponsiveImage alt={selectedPlace.cover.alt} height={selectedPlace.cover.height} sizes="(max-width: 780px) 110px, 180px" src={selectedPlace.cover.src} srcSet={selectedPlace.cover.srcSet} width={selectedPlace.cover.width} />
+              <ImageFrame alt={selectedPlace.cover.alt} aspectRatio="auto" frameClassName="globe-photo-card-media" height={selectedPlace.cover.height} loading="eager" sizes="(max-width: 780px) 110px, 180px" src={selectedPlace.cover.src} srcSet={selectedPlace.cover.srcSet} width={selectedPlace.cover.width} />
               <div>
                 <p className="eyebrow">{siteCopy.globe.selectedPlace}</p>
                 <h2>{selectedPlace.title}</h2>

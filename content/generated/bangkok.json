@@ -36,7 +36,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:27 01:51:49"
-      }
+      },
+      "placeholderColor": "#a17b73"
     },
     {
       "id": "dscf2108",
@@ -64,7 +65,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:27 01:53:53"
-      }
+      },
+      "placeholderColor": "#978080"
     },
     {
       "id": "dscf2125",
@@ -92,7 +94,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:27 01:57:32"
-      }
+      },
+      "placeholderColor": "#754330"
     },
     {
       "id": "dscf2158",
@@ -120,7 +123,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:27 09:59:51"
-      }
+      },
+      "placeholderColor": "#674c4b"
     },
     {
       "id": "dscf2236",
@@ -148,7 +152,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:09:01 16:00:59"
-      }
+      },
+      "placeholderColor": "#856c5b"
     },
     {
       "id": "dscf2282",
@@ -176,7 +181,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:09:06 23:49:25"
-      }
+      },
+      "placeholderColor": "#9e756c"
     },
     {
       "id": "dscf2292",
@@ -204,7 +210,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:09:06 23:53:27"
-      }
+      },
+      "placeholderColor": "#87756d"
     },
     {
       "id": "dscf2330",
@@ -232,7 +239,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:09:07 00:02:03"
-      }
+      },
+      "placeholderColor": "#6b5653"
     },
     {
       "id": "dscf2365",
@@ -260,7 +268,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:09:07 00:11:03"
-      }
+      },
+      "placeholderColor": "#624f4a"
     },
     {
       "id": "dscf2402",
@@ -288,7 +297,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:11:02 17:04:48"
-      }
+      },
+      "placeholderColor": "#241a0f"
     },
     {
       "id": "dscf2404",
@@ -316,7 +326,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:11:02 17:07:50"
-      }
+      },
+      "placeholderColor": "#56371f"
     },
     {
       "id": "dscf2407",
@@ -344,7 +355,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:11:02 17:12:40"
-      }
+      },
+      "placeholderColor": "#684634"
     },
     {
       "id": "dscf2485",
@@ -372,7 +384,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:23 03:48:19"
-      }
+      },
+      "placeholderColor": "#2a2017"
     },
     {
       "id": "dscf2555",
@@ -400,7 +413,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:23 04:21:57"
-      }
+      },
+      "placeholderColor": "#71523d"
     },
     {
       "id": "dscf2641",
@@ -428,7 +442,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:23 20:38:13"
-      }
+      },
+      "placeholderColor": "#322f30"
     },
     {
       "id": "dscf2726",
@@ -456,7 +471,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2025:08:24 22:21:08"
-      }
+      },
+      "placeholderColor": "#2f2218"
     }
   ]
 }

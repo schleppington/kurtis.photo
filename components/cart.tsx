@@ -1,6 +1,6 @@
 "use client";
 
-import { ResponsivePhoto } from "@/components/responsive-image";
+import { PhotoFrame } from "@/components/photo-frame";
 import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { commerceConfig, routes } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
@@ -242,7 +242,7 @@ function CartPanel() {
           <ul className="cart-lines">
             {resolvedLines.map(({ line, collection, photo, option }) => (
               <li key={line.id}>
-                <ResponsivePhoto alt="" photo={photo} sizes="86px" variant="768" />
+                <PhotoFrame alt="" frameClassName="cart-line-media" photo={photo} sizes="86px" variant="768" />
                 <div>
                   <strong>{formatPrintName(collection, photo)}</strong>
                   <span>{option.label} · {formatPrice(option.price)}</span>

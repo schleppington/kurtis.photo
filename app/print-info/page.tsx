@@ -4,6 +4,8 @@ import { formatPrice, printOptions } from "@/lib/catalog";
 
 export const metadata = { title: siteCopy.printInfo.metadataTitle };
 
+export const dynamic = "force-static";
+
 export default function PrintInfoPage() {
   return <main><div className="page-shell">
     <section className="page-intro"><p className="eyebrow">{siteCopy.printInfo.eyebrow}</p><h1>{siteCopy.printInfo.title}</h1><p>{siteCopy.printInfo.introduction}</p></section>

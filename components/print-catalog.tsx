@@ -1,7 +1,8 @@
 "use client";
 
 import { TransitionLink as Link, useNavigationTransition } from "@/components/navigation-transition";
-import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
+import { preloadImageSources } from "@/components/responsive-image";
+import { PhotoFrame } from "@/components/photo-frame";
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { PrintConfigurator } from "@/components/cart";
@@ -59,6 +60,7 @@ export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
 
   function open(index: number) {
     const item = catalogItems[index];
+    preloadImageSources([item.photo.variants[siteConfig.imageVariants.full]]);
     flushSync(() => setTransitionSourceKey(item.key));
     runViewTransition(() => {
       setTransitionDirection(null);
@@ -106,7 +108,7 @@ export function PrintCatalog({ groups }: { groups: PrintCatalogGroup[] }) {
                     style={tileStyle}
                     type="button"
                   >
-                    <ResponsivePhoto alt={photo.alt} loading={groupIndex === 0 && index < 3 ? "eager" : "lazy"} photo={photo} sizes="(max-width: 780px) 100vw, (max-width: 1200px) 33vw, 25vw" variant="768" />
+                    <PhotoFrame alt={photo.alt} aspectRatio={aspectRatio} frameClassName="print-catalog-media" imageClassName="print-catalog-image" loading={groupIndex === 0 && index < 3 ? "eager" : "lazy"} photo={photo} sizes="(max-width: 780px) 100vw, (max-width: 1200px) 33vw, 25vw" variant="768" />
                   </button>
                 );
               })}

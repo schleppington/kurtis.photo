@@ -1,3 +1,5 @@
+import { preload } from "react-dom";
+import { buildPhotoSrcSet } from "@/components/responsive-image";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import { CheckoutReturnHandler } from "@/components/cart";
 import { PrintCatalog, type PrintCatalogGroup } from "@/components/print-catalog";
@@ -33,6 +35,15 @@ export default async function PrintsPage({
     group.items.push({ photo, selection });
     return groups;
   }, []);
+  const firstCatalogPhoto = catalogGroups[0]?.items[0]?.photo;
+  if (firstCatalogPhoto) {
+    preload(firstCatalogPhoto.variants["768"], {
+      as: "image",
+      fetchPriority: "high",
+      imageSizes: "(max-width: 780px) 100vw, (max-width: 1200px) 33vw, 25vw",
+      imageSrcSet: buildPhotoSrcSet(firstCatalogPhoto),
+    });
+  }
 
   return (
     <main><div className="page-shell">

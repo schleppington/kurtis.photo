@@ -36,7 +36,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:27"
-      }
+      },
+      "placeholderColor": "#99a1ad"
     },
     {
       "id": "belmontparkapril2026-6",
@@ -64,7 +65,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:27"
-      }
+      },
+      "placeholderColor": "#443636"
     },
     {
       "id": "belmontparkapril2026-5",
@@ -92,7 +94,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:28"
-      }
+      },
+      "placeholderColor": "#77a3c4"
     },
     {
       "id": "belmontparkapril2026-13",
@@ -120,7 +123,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:38"
-      }
+      },
+      "placeholderColor": "#85807b"
     },
     {
       "id": "belmontparkapril2026-17",
@@ -148,7 +152,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:43"
-      }
+      },
+      "placeholderColor": "#635e59"
     },
     {
       "id": "belmontparkapril2026-22",
@@ -176,7 +181,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:48"
-      }
+      },
+      "placeholderColor": "#8b545b"
     },
     {
       "id": "belmontparkapril2026-24",
@@ -204,7 +210,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:52"
-      }
+      },
+      "placeholderColor": "#946f6a"
     },
     {
       "id": "belmontparkapril2026-25",
@@ -232,7 +239,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:52"
-      }
+      },
+      "placeholderColor": "#d5cec8"
     },
     {
       "id": "belmontparkapril2026-28",
@@ -260,7 +268,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:38:54"
-      }
+      },
+      "placeholderColor": "#745548"
     },
     {
       "id": "belmontparkapril2026-34",
@@ -288,7 +297,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:39:03"
-      }
+      },
+      "placeholderColor": "#92776f"
     },
     {
       "id": "belmontparkapril2026-39",
@@ -316,7 +326,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:39:06"
-      }
+      },
+      "placeholderColor": "#9f8d81"
     },
     {
       "id": "belmontparkapril2026-38",
@@ -344,7 +355,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:39:07"
-      }
+      },
+      "placeholderColor": "#d9b7ad"
     },
     {
       "id": "belmontparkapril2026-40",
@@ -372,7 +384,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": "2026:04:23 10:39:07"
-      }
+      },
+      "placeholderColor": "#934436"
     }
   ]
 }

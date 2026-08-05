@@ -29,7 +29,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#766359"
     },
     {
       "id": "photo-5c64c5987d0c",
@@ -55,7 +56,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#656056"
     },
     {
       "id": "photo-87d6b1785eaa",
@@ -81,7 +83,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#716f4c"
     },
     {
       "id": "photo-699e8d2f9b19",
@@ -107,7 +110,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#3d462b"
     }
   ]
 }

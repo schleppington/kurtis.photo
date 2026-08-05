@@ -44,6 +44,7 @@ export type Photo = {
   releaseStatus: "not-applicable" | "released" | "review-required";
   width: number;
   height: number;
+  placeholderColor?: string | null;
   variants: Record<string, string>;
   metadata: ImageMetadata;
 };

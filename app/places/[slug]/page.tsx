@@ -1,3 +1,5 @@
+import { preload } from "react-dom";
+import { buildPhotoSrcSet } from "@/components/responsive-image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TransitionLink as Link } from "@/components/navigation-transition";
@@ -31,6 +33,13 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const collection = getCollection(slug);
   if (!collection) notFound();
+  const firstPhoto = collection.images[0];
+  preload(firstPhoto.variants[siteConfig.imageVariants.thumbnail], {
+    as: "image",
+    fetchPriority: "high",
+    imageSizes: "(max-width: 780px) 100vw, (max-width: 1150px) 33vw, 25vw",
+    imageSrcSet: buildPhotoSrcSet(firstPhoto),
+  });
   return (
     <main><div className="page-shell">
       <section className="collection-intro">

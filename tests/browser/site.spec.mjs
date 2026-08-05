@@ -2,6 +2,11 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const collectionPath = "/places/yosemite";
+const PERFORMANCE_BUDGETS = {
+  maxCumulativeLayoutShift: 0.1,
+  maxInitialLoadMs: 15_000,
+  maxRouteLatencyMs: 1_500,
+};
 
 async function openCollection(page) {
   await page.goto(collectionPath, { waitUntil: "domcontentloaded" });
@@ -26,9 +31,12 @@ test.describe("site navigation and photo viewing", () => {
     await expect(page).toHaveURL(/\/places$/);
     await expect(page.getByRole("heading", { name: "Places", exact: true })).toBeVisible();
 
+    const routeStartedAt = await page.evaluate(() => performance.now());
     await page.getByRole("link", { name: "Yosemite" }).first().click();
     await expect(page).toHaveURL(/\/places\/yosemite$/);
     await expect(page.getByRole("heading", { name: "Yosemite" })).toBeVisible();
+    const routeLatencyMs = await page.evaluate((startedAt) => performance.now() - startedAt, routeStartedAt);
+    expect(routeLatencyMs).toBeLessThan(PERFORMANCE_BUDGETS.maxRouteLatencyMs);
   });
 
   test("opens the photo viewer and supports keyboard navigation", async ({ page }) => {
@@ -138,6 +146,6 @@ test("records a lightweight performance baseline for the home page", async ({ pa
 
   expect(metrics.domContentLoadedMs).toBeGreaterThan(0);
   expect(metrics.firstContentfulPaintMs).toBeGreaterThan(0);
-  expect(metrics.loadMs).toBeLessThan(15_000);
-  expect(metrics.cumulativeLayoutShift).toBeLessThan(0.1);
+  expect(metrics.loadMs).toBeLessThan(PERFORMANCE_BUDGETS.maxInitialLoadMs);
+  expect(metrics.cumulativeLayoutShift).toBeLessThan(PERFORMANCE_BUDGETS.maxCumulativeLayoutShift);
 });

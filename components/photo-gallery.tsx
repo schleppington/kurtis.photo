@@ -3,44 +3,15 @@
 import { flushSync } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigationTransition } from "@/components/navigation-transition";
-import { preloadImageSources, ResponsivePhoto } from "@/components/responsive-image";
+import { PhotoFrame } from "@/components/photo-frame";
+import { preloadImageSources } from "@/components/responsive-image";
 import { PhotoLightbox } from "@/components/photo-lightbox";
 import { routes, siteConfig } from "@/content/site-config";
 import { siteCopy } from "@/content/site-copy";
-import { displayDate, formatPhotoName, type Collection, type Photo } from "@/lib/catalog";
+import { displayDate, formatPhotoName, type Collection } from "@/lib/catalog";
 
 type GalleryCollection = Pick<Collection, "slug" | "title" | "images"> & { location?: string };
 
-function GalleryPhoto({ index, photo, isTransitionSource }: { index: number; photo: Photo; isTransitionSource: boolean }) {
-  const mediaRef = useRef<HTMLDivElement>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const image = mediaRef.current?.querySelector("img");
-    if (image?.complete) {
-      setLoaded(true);
-    }
-  }, []);
-
-  return (
-    <div
-      className={"photo-tile-media" + (loaded ? " is-loaded" : "") + (isTransitionSource ? " is-view-transition-source" : "")}
-      ref={mediaRef}
-      style={{ aspectRatio: photo.width + " / " + photo.height }}
-    >
-      <ResponsivePhoto
-        alt={photo.alt}
-        fetchPriority={index === 0 ? "high" : "auto"}
-        loading={index > 1 ? "lazy" : "eager"}
-        onError={() => setLoaded(true)}
-        onLoad={() => setLoaded(true)}
-        photo={photo}
-        sizes="(max-width: 780px) 100vw, (max-width: 1150px) 33vw, 25vw"
-        variant="768"
-      />
-    </div>
-  );
-}
 
 export function PhotoGallery({
   collection,
@@ -87,6 +58,7 @@ export function PhotoGallery({
 
   function open(index: number) {
     const photo = collection.images[index];
+    preloadImageSources([photo.variants[siteConfig.imageVariants.full]]);
     flushSync(() => setTransitionSourceId(photo.id));
     runViewTransition(() => {
       window.history.pushState({}, "", `${basePath}/${collection.slug}/${photo.id}`);
@@ -122,7 +94,16 @@ export function PhotoGallery({
       <div className="photo-grid">
         {collection.images.map((photo, index) => (
           <button className="photo-tile" key={photo.id} type="button" onClick={() => open(index)}>
-            <GalleryPhoto index={index} isTransitionSource={activeIndex === null && transitionSourceId === photo.id} photo={photo} />
+            <PhotoFrame
+              alt={photo.alt}
+              aspectRatio={photo.width + " / " + photo.height}
+              fetchPriority={index === 0 ? "high" : "auto"}
+              frameClassName={"photo-tile-media" + (activeIndex === null && transitionSourceId === photo.id ? " is-view-transition-source" : "")}
+              loading={index > 1 ? "lazy" : "eager"}
+              photo={photo}
+              sizes="(max-width: 780px) 100vw, (max-width: 1150px) 33vw, 25vw"
+              variant="768"
+            />
             <span>{formatPhotoName(collection, photo)}</span>
           </button>
         ))}

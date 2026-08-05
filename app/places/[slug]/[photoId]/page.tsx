@@ -1,6 +1,7 @@
 import { ResponsivePhoto } from "@/components/responsive-image";
 import { TransitionLink as Link } from "@/components/navigation-transition";
 import type { Metadata } from "next";
+import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { routes, siteConfig } from "@/content/site-config";
@@ -36,6 +37,7 @@ export default async function PhotoPage({ params }: { params: Promise<{ slug: st
   const collection = getCollection(slug);
   const photo = getPhoto(slug, photoId);
   if (!collection || !photo) notFound();
+  preload(photo.variants[siteConfig.imageVariants.full], { as: "image", fetchPriority: "high" });
   const index = collection.images.findIndex((item) => item.id === photo.id);
   const previous = collection.images[(index - 1 + collection.images.length) % collection.images.length];
   const next = collection.images[(index + 1) % collection.images.length];

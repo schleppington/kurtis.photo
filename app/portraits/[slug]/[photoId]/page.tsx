@@ -1,5 +1,6 @@
 import { ResponsivePhoto } from "@/components/responsive-image";
 import { TransitionLink as Link } from "@/components/navigation-transition";
+import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { routes } from "@/content/site-config";
@@ -22,6 +23,7 @@ export default async function PortraitPhotoPage({ params }: { params: Promise<{ 
   const collection = getPortraitCollection(slug);
   const photo = getPortraitPhoto(slug, photoId);
   if (!collection || !photo) notFound();
+  preload(photo.variants["2400"], { as: "image", fetchPriority: "high" });
 
   const index = collection.images.findIndex((image) => image.id === photo.id);
   const previous = collection.images[(index - 1 + collection.images.length) % collection.images.length];

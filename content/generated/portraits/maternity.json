@@ -29,7 +29,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#c9b7ac"
     },
     {
       "id": "photo-7dd7002f6ffc",
@@ -55,7 +56,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#d0c0b8"
     },
     {
       "id": "photo-728165f969b3",
@@ -81,7 +83,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#d4d4d4"
     },
     {
       "id": "photo-d2cf689bf49d",
@@ -107,7 +110,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#ded1ca"
     },
     {
       "id": "photo-e9b4c4609030",
@@ -133,7 +137,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#bfa9a1"
     },
     {
       "id": "photo-e8dad4e27fdd",
@@ -159,7 +164,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#d9ccc3"
     },
     {
       "id": "photo-50359dbca8c1",
@@ -185,7 +191,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#baa695"
     },
     {
       "id": "photo-51e297568229",
@@ -211,7 +218,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#6c6c6c"
     },
     {
       "id": "photo-18a239c851cc",
@@ -237,7 +245,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#787271"
     },
     {
       "id": "photo-6e56804fe3ef",
@@ -263,7 +272,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#545454"
     },
     {
       "id": "photo-010a92e23158",
@@ -289,7 +299,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#857a70"
     },
     {
       "id": "photo-99dd541f0ad1",
@@ -315,7 +326,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#927360"
     },
     {
       "id": "photo-36e1ae9ea282",
@@ -341,7 +353,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#757270"
     },
     {
       "id": "photo-ae9ced14edac",
@@ -367,7 +380,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#9c7965"
     },
     {
       "id": "photo-3d1785457483",
@@ -393,7 +407,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#7e6958"
     },
     {
       "id": "photo-328a1684f12e",
@@ -419,7 +434,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#59524d"
     },
     {
       "id": "photo-67e77e68cef8",
@@ -445,7 +461,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#988174"
     },
     {
       "id": "photo-a5738e3d82fc",
@@ -471,7 +488,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#bba7a7"
     },
     {
       "id": "photo-dfa9c0cd5f3c",
@@ -497,7 +515,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#bbacac"
     },
     {
       "id": "photo-195d4cced645",
@@ -523,7 +542,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#917b7e"
     },
     {
       "id": "photo-94efed811604",
@@ -549,7 +569,8 @@
         "shutterSpeed": null,
         "iso": null,
         "captureDate": null
-      }
+      },
+      "placeholderColor": "#bd957f"
     }
   ]
 }

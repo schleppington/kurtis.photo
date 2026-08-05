@@ -15,9 +15,10 @@ const collectionSlug = argumentsList.find((argument) => !argument.startsWith("--
 const options = argumentsList.filter((argument) => argument.startsWith("--"));
 const replaceExisting = options.includes("--replace");
 const portraits = options.includes("--portraits");
+const placeholdersOnly = options.includes("--placeholders-only");
 
 if (!collectionSlug) {
-  console.error("Usage: npm run photos:prepare -- <collection-slug> [--replace] | npm run portraits:prepare -- <collection-slug> [--replace]");
+  console.error("Usage: npm run photos:prepare -- <collection-slug> [--replace] [--placeholders-only] | npm run portraits:prepare -- <collection-slug> [--replace] [--placeholders-only]");
   process.exit(1);
 }
 
@@ -26,8 +27,8 @@ if (!/^[a-z0-9-]+$/.test(collectionSlug)) {
   process.exit(1);
 }
 
-if (options.some((option) => option !== "--replace" && option !== "--portraits")) {
-  console.error("The only supported options are --replace and --portraits.");
+if (options.some((option) => option !== "--replace" && option !== "--portraits" && option !== "--placeholders-only")) {
+  console.error("The only supported options are --replace, --portraits, and --placeholders-only.");
   process.exit(1);
 }
 
@@ -74,6 +75,7 @@ function parseSipsMetadata(stdout) {
     cameraMake: valueFor("make"),
     cameraBody: valueFor("model"),
     captureDate: valueFor("creation"),
+    placeholderColor: null,
   };
 }
 
@@ -140,6 +142,17 @@ function publicId(filename) {
   return path.basename(filename, path.extname(filename)).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+async function representativeColor(sourcePath) {
+  const sharp = await getSharp();
+  const { data } = await sharp(sourcePath)
+    .rotate()
+    .resize({ width: 1, height: 1, fit: 'cover' })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  if (data.length < 3) return null;
+  return '#' + [data[0], data[1], data[2]].map((value) => value.toString(16).padStart(2, '0')).join('');
+}
 async function run(command, args) {
   await execFileAsync(command, args, { maxBuffer: 10 * 1024 * 1024 });
 }
@@ -147,7 +160,10 @@ async function run(command, args) {
 async function inspect(sourcePath) {
   if (useSharp) {
     const sharp = await getSharp();
-    const metadata = await sharp(sourcePath).metadata();
+    const [metadata, placeholderColor] = await Promise.all([
+      sharp(sourcePath).metadata(),
+      representativeColor(sourcePath),
+    ]);
     const exif = parseExifMetadata(metadata.exif);
     return {
       width: Number(metadata.width),
@@ -155,6 +171,7 @@ async function inspect(sourcePath) {
       cameraMake: exif.cameraMake,
       cameraBody: exif.cameraBody,
       captureDate: exif.captureDate,
+      placeholderColor,
     };
   }
 
@@ -251,6 +268,47 @@ const previousPhotos = previousManifest?.images ?? [];
 const previousBySource = new Map(previousPhotos.map((photo) => [photo.sourceFile, photo]));
 const previousByAssetKey = new Map(previousPhotos.map((photo) => [photo.assetKey, photo]));
 
+if (placeholdersOnly) {
+  if (!previousManifest) {
+    console.error("No existing manifest found at " + manifestPath);
+    process.exit(1);
+  }
+
+  const sourceFiles = (await readdir(sourceDirectory))
+    .filter((filename) => /\.(jpe?g)$/i.test(filename))
+    .sort((left, right) => left.localeCompare(right));
+  const sourceByFilename = new Map(sourceFiles.map((filename) => [filename, path.join(sourceDirectory, filename)]));
+  const sourceByAssetKey = new Map();
+  for (const filename of sourceFiles) {
+    const hash = await contentHash(path.join(sourceDirectory, filename));
+    sourceByAssetKey.set("portrait-" + hash, path.join(sourceDirectory, filename));
+  }
+
+  const images = await Promise.all(previousPhotos.map(async (photo) => {
+    if (photo.placeholderColor) return photo;
+    const sourcePath = portraits
+      ? sourceByAssetKey.get(photo.assetKey)
+      : sourceByFilename.get(photo.sourceFile);
+    const fallbackPath = photo.variants?.["768"]
+      ? path.join(root, photo.variants["768"].replace(/^\/+/, ""))
+      : null;
+    let placeholderColor = null;
+    try {
+      placeholderColor = await representativeColor(sourcePath ?? fallbackPath);
+    } catch {
+      placeholderColor = null;
+    }
+    return {
+      ...photo,
+      placeholderColor,
+    };
+  }));
+
+  await writeFile(manifestPath, JSON.stringify({ ...previousManifest, images }, null, 2) + "\n");
+  console.log("Updated placeholder colors for " + images.length + " photographs in " + collectionSlug + ".");
+  process.exit(0);
+}
+
 await rm(publicDirectory, { recursive: true, force: true });
 await mkdir(publicDirectory, { recursive: true });
 await mkdir(workDirectory, { recursive: true });
@@ -291,6 +349,7 @@ for (const [index, filename] of files.entries()) {
     releaseStatus: portraits ? "review-required" : previous?.releaseStatus ?? "not-applicable",
     width: metadata.width,
     height: metadata.height,
+    placeholderColor: previous?.placeholderColor ?? metadata.placeholderColor ?? null,
     variants,
     metadata: portraits ? {
       cameraMake: null,

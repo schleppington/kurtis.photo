@@ -1,3 +1,5 @@
+import { preload } from "react-dom";
+import { buildPhotoSrcSet } from "@/components/responsive-image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PhotoGallery } from "@/components/photo-gallery";
@@ -30,6 +32,13 @@ export default async function PortraitCollectionPage({ params }: { params: Promi
   const { slug } = await params;
   const collection = getPortraitCollection(slug);
   if (!collection) notFound();
+  const firstPhoto = collection.images[0];
+  preload(firstPhoto.variants["768"], {
+    as: "image",
+    fetchPriority: "high",
+    imageSizes: "(max-width: 780px) 100vw, (max-width: 1150px) 33vw, 25vw",
+    imageSrcSet: buildPhotoSrcSet(firstPhoto),
+  });
 
   return <main><div className="page-shell">
     <section className="collection-intro portrait-collection-intro"><div><p className="eyebrow">{siteCopy.portraits.sessionEyebrow}</p><h1>{collection.title}</h1></div><p>{collection.note ?? siteCopy.portraits.sessionFallback}</p></section>
