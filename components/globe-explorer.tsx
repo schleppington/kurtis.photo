@@ -35,6 +35,9 @@ type CountriesTopology = Topology<{ countries: GeometryCollection; land: Geometr
 type GlobeResolution = "50m" | "10m";
 type GlobeGeometry = { land: FeatureCollection<Geometry>; countryBorders: MultiLineString };
 type PlaceProperties = { slug: string; title: string };
+type GeometryWorkerResponse =
+  | { type: "geometry"; requestId: number; geometry: GlobeGeometry }
+  | { type: "error"; requestId: number; message: string };
 type ClusterMarker = { marker: MapLibreMarker; element: HTMLSpanElement };
 type GlobeCameraMemory = {
   center: [number, number];
@@ -122,6 +125,53 @@ async function loadGlobeGeometry(resolution: GlobeResolution, signal?: AbortSign
   ) as MultiLineString;
 
   return { land, countryBorders };
+}
+
+function createGeometryWorker() {
+  if (typeof Worker === "undefined") return null;
+  try {
+    return new Worker(new URL("./globe-geometry.worker.ts", import.meta.url), { type: "module" });
+  } catch {
+    return null;
+  }
+}
+
+function loadGlobeGeometryInWorker(
+  worker: Worker,
+  resolution: GlobeResolution,
+  requestId: number,
+  signal: AbortSignal,
+) {
+  return new Promise<GlobeGeometry>((resolve, reject) => {
+    const cleanup = () => {
+      worker.removeEventListener("message", onMessage);
+      worker.removeEventListener("error", onError);
+      signal.removeEventListener("abort", onAbort);
+    };
+    const onMessage = (event: MessageEvent<GeometryWorkerResponse>) => {
+      if (event.data.requestId !== requestId) return;
+      cleanup();
+      if (event.data.type === "geometry") resolve(event.data.geometry);
+      else reject(new Error(event.data.message));
+    };
+    const onError = (event: ErrorEvent) => {
+      cleanup();
+      reject(new Error(event.message || "The globe geometry worker failed."));
+    };
+    const onAbort = () => {
+      cleanup();
+      reject(new Error("The globe geometry request was aborted."));
+    };
+
+    worker.addEventListener("message", onMessage);
+    worker.addEventListener("error", onError);
+    signal.addEventListener("abort", onAbort, { once: true });
+    if (signal.aborted) {
+      onAbort();
+      return;
+    }
+    worker.postMessage({ type: "load", requestId, resolution });
+  });
 }
 
 const borderOpacity = ["interpolate", ["linear"], ["zoom"], ...globeConfig.style.countryBorderOpacity];
@@ -415,8 +465,30 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
     let instance: MapLibreMap | null = null;
     let lightingTimer: ReturnType<typeof setInterval> | null = null;
     let cameraMemoryFrame: number | null = null;
+    let clusterMarkerFrame: number | null = null;
+    let clusterMarkerTimeout: number | null = null;
+    let lastClusterMarkerUpdate = Number.NEGATIVE_INFINITY;
+    let geometryWorker: Worker | null = null;
+    let geometryRequestId = 0;
     const clusterMarkers = clusterMarkersRef.current;
     const geometryAbortController = new AbortController();
+
+    const loadGeometry = (resolution: GlobeResolution) => {
+      geometryWorker ??= createGeometryWorker();
+      if (!geometryWorker) return loadGlobeGeometry(resolution, geometryAbortController.signal);
+
+      const worker = geometryWorker;
+      const requestId = geometryRequestId++;
+      return loadGlobeGeometryInWorker(worker, resolution, requestId, geometryAbortController.signal).catch((error) => {
+        if (geometryWorker === worker) {
+          worker.terminate();
+          geometryWorker = null;
+        }
+        if (geometryAbortController.signal.aborted) throw error;
+        console.warn("The globe geometry worker failed; falling back to the main thread.", error);
+        return loadGlobeGeometry(resolution, geometryAbortController.signal);
+      });
+    };
 
     async function initializeMap() {
       const container = mapContainerRef.current;
@@ -425,7 +497,7 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
       try {
         const [{ Map: MapConstructor, Marker }, geometry] = await Promise.all([
           import("maplibre-gl"),
-          loadGlobeGeometry("50m", geometryAbortController.signal),
+          loadGeometry("50m"),
         ]);
         if (cancelled) return;
         const rememberedCamera = readGlobeCamera();
@@ -490,13 +562,43 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
             clusterMarkers.delete(clusterId);
           }
         };
+        const scheduleClusterMarkers = () => {
+          if (cancelled || clusterMarkerFrame !== null || clusterMarkerTimeout !== null) return;
+          const wait = Math.max(0, globeConfig.cluster.markerUpdateMs - (performance.now() - lastClusterMarkerUpdate));
+          if (wait > 0) {
+            clusterMarkerTimeout = window.setTimeout(() => {
+              clusterMarkerTimeout = null;
+              scheduleClusterMarkers();
+            }, wait);
+            return;
+          }
+          clusterMarkerFrame = window.requestAnimationFrame(() => {
+            clusterMarkerFrame = null;
+            if (!cancelled) {
+              updateClusterMarkers();
+              lastClusterMarkerUpdate = performance.now();
+            }
+          });
+        };
+        const flushClusterMarkers = () => {
+          if (clusterMarkerTimeout !== null) {
+            window.clearTimeout(clusterMarkerTimeout);
+            clusterMarkerTimeout = null;
+          }
+          if (clusterMarkerFrame !== null) {
+            window.cancelAnimationFrame(clusterMarkerFrame);
+            clusterMarkerFrame = null;
+          }
+          lastClusterMarkerUpdate = Number.NEGATIVE_INFINITY;
+          scheduleClusterMarkers();
+        };
 
         instance.on("load", () => {
           if (cancelled || !instance) return;
           performance.mark("globe-ready");
           setMapReady(true);
 
-          void loadGlobeGeometry("10m", geometryAbortController.signal).then((highResolutionGeometry) => {
+          void loadGeometry("10m").then((highResolutionGeometry) => {
             if (cancelled || !instance) return;
             const landSource = instance.getSource("land") as GeoJSONSource | undefined;
             const countryBorderSource = instance.getSource("country-borders") as GeoJSONSource | undefined;
@@ -527,7 +629,8 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
           };
           updateLighting();
           lightingTimer = setInterval(updateLighting, globeConfig.lightingRefreshMs);
-          instance.on("render", updateClusterMarkers);
+          instance.on("render", scheduleClusterMarkers);
+          instance.on("idle", flushClusterMarkers);
 
           const reducedMotion = window.matchMedia(globeConfig.mediaQueries.reducedMotion).matches;
           const opensOnPlace = new URLSearchParams(window.location.search).has(globeConfig.queries.selectedPlace);
@@ -583,6 +686,9 @@ export function GlobeExplorer({ places }: { places: GlobePlace[] }) {
       cancelled = true;
       geometryAbortController.abort();
       if (cameraMemoryFrame !== null) window.cancelAnimationFrame(cameraMemoryFrame);
+      if (clusterMarkerFrame !== null) window.cancelAnimationFrame(clusterMarkerFrame);
+      if (clusterMarkerTimeout !== null) window.clearTimeout(clusterMarkerTimeout);
+      geometryWorker?.terminate();
       if (lightingTimer) clearInterval(lightingTimer);
       for (const { marker } of clusterMarkers.values()) marker.remove();
       clusterMarkers.clear();
